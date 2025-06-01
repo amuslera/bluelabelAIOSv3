@@ -1,0 +1,165 @@
+/* Control Center Styles */
+
+/* Main app container */
+Screen {
+    background: $surface;
+}
+
+/* Grid layout for 4 panels */
+.main-grid {
+    layout: grid;
+    grid-size: 2 2;
+    grid-gutter: 1;
+    margin: 0 1;
+}
+
+/* Panel styling */
+.panel {
+    border: solid $primary;
+    height: 100%;
+    padding: 1;
+}
+
+.panel-title {
+    text-style: bold;
+    color: $primary;
+    margin-bottom: 1;
+}
+
+/* Agent Orchestra Panel */
+.agent-table {
+    height: 100%;
+    border: none;
+}
+
+.agent-status-active {
+    color: $success;
+}
+
+.agent-status-busy {
+    color: $warning;
+}
+
+.agent-status-error {
+    color: $error;
+}
+
+/* Activity Monitor Panel */
+.activity-log {
+    height: 100%;
+    border: none;
+    scrollbar-size: 1 1;
+}
+
+.activity-success {
+    color: $success;
+}
+
+.activity-warning {
+    color: $warning;
+}
+
+.activity-error {
+    color: $error;
+}
+
+.activity-info {
+    color: $primary;
+}
+
+.activity-timestamp {
+    color: $text-disabled;
+    text-style: dim;
+}
+
+/* Task Manager Panel */
+.task-list {
+    height: 100%;
+    border: none;
+}
+
+.task-pending {
+    color: $text;
+}
+
+.task-in-progress {
+    color: $primary;
+}
+
+.task-completed {
+    color: $success;
+    text-style: strike;
+}
+
+.task-blocked {
+    color: $error;
+}
+
+/* PR Review Panel */
+.pr-info {
+    padding: 1;
+}
+
+.pr-title {
+    text-style: bold;
+    color: $primary;
+}
+
+.pr-metadata {
+    color: $text-muted;
+    margin: 1 0;
+}
+
+/* Buttons */
+Button {
+    margin: 1 2;
+}
+
+.primary-button {
+    background: $primary;
+    color: $text;
+}
+
+.success-button {
+    background: $success;
+    color: $text;
+}
+
+.danger-button {
+    background: $error;
+    color: $text;
+}
+
+/* Modal dialogs */
+.modal-dialog {
+    border: double $primary;
+    background: $panel;
+    padding: 2;
+}
+
+/* Progress bars */
+.progress-bar {
+    color: $primary;
+}
+
+/* Footer status */
+Footer {
+    background: $panel;
+}
+
+.status-connected {
+    color: $success;
+}
+
+.status-disconnected {
+    color: $error;
+}
+
+/* Scrollbars */
+Scrollbar {
+    background: $panel;
+}
+
+ScrollbarThumb {
+    background: $primary;
+}

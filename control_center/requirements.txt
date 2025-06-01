@@ -1,0 +1,5 @@
+# Control Center Requirements
+textual>=0.47.0
+aiohttp>=3.9.0
+websockets>=12.0
+redis>=5.0.0
