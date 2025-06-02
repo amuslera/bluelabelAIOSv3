@@ -149,13 +149,14 @@ kubectl apply -f k8s/
 - **Control Center UI** with real-time monitoring dashboard
 - **WebSocket Server** for live updates
 
-### 🎭 READY: Theatrical Monitoring System (June 2, 2025)
+### 🎭 READY: Theatrical Monitoring System v1.0.0 (June 2, 2025)
 - **Theatrical Orchestrator** (`theatrical_orchestrator.py`) - Slowed execution with visual delays
-- **Real-time Dashboard** (`theatrical_monitoring_dashboard.py`) - Live TUI with agent panels
+- **Real-time Dashboard** (`theatrical_monitoring_dashboard.py`) - Live TUI with agent panels **✅ FIXED**
 - **Demo Launcher** (`launch_theatrical_demo.py`) - Interactive demo with multiple modes
 - **Step-by-step visualization** of agent handoffs and collaboration
 - **Color-coded event logging** with timestamps and role indicators
 - **Performance tracking** for cost, time, and token usage across all agents
+- **🎉 Activity Display**: Real-time rolling activity logs with 4-line history per agent (WORKING!)
 
 ### 🔍 Critical Discoveries
 1. **Router Initialization**: Must call `await router.initialize()` before use
@@ -165,6 +166,7 @@ kubectl apply -f k8s/
 5. **Provider Distribution**: Router intelligently distributes tasks by cost/capability
 6. **API Key Management**: Load from .env with `load_dotenv()` for real providers
 7. **Cost Tracking**: Real-time token usage and cost monitoring per provider
+8. **🎭 Textual Dashboard**: Timestamp format `[HH:MM:SS]` conflicts with Rich markup - use `HH:MM:SS` instead
 
 ### 📋 Next Development Focus
 1. **Production Infrastructure** - Authentication, monitoring, deployment scripts
