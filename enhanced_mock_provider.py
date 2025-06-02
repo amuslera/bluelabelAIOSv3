@@ -11,8 +11,12 @@ class EnhancedMockProvider(MockProvider):
         """Generate enhanced mock content with better backend responses."""
         user_lower = user_content.lower()
         
+        # QA/Testing responses (check first as it's most specific)
+        if any(word in user_lower for word in ["test", "pytest", "unit test", "qa", "quality", "coverage", "testing"]):
+            return self._mock_qa_testing_code()
+        
         # Frontend/React/Vue development responses
-        if any(word in user_lower for word in ["react", "vue", "frontend", "component", "ui", "login", "form", "authentication"]):
+        elif any(word in user_lower for word in ["react", "vue", "frontend", "component", "ui", "login form", "user interface"]):
             return self._mock_frontend_development()
         
         # Backend/FastAPI development responses
@@ -22,10 +26,6 @@ class EnhancedMockProvider(MockProvider):
         # Python code generation
         elif any(word in user_lower for word in ["python", "class", "function", "def", "import"]):
             return self._mock_python_code()
-        
-        # Testing responses
-        elif any(word in user_lower for word in ["test", "pytest", "unit test"]):
-            return self._mock_testing_code()
         
         # Default to parent's logic
         else:
@@ -54,19 +54,19 @@ router = APIRouter(prefix="/users", tags=["users"])
 class UserProfileRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="User's full name")
     email: str = Field(..., description="User's email address")
-    age: int = Field(..., gt=0, le=120, description="User's age")
+    age: Optional[int] = Field(None, ge=0, le=120, description="User's age")
     
     @validator('email')
     def validate_email(cls, v):
-        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-        if not re.match(email_pattern, v):
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, v):
             raise ValueError('Invalid email format')
         return v
     
     @validator('name')
     def validate_name(cls, v):
         if not v.strip():
-            raise ValueError('Name cannot be empty')
+            raise ValueError('Name cannot be empty or just whitespace')
         return v.strip()
 
 # Response Models
@@ -74,77 +74,85 @@ class UserProfileResponse(BaseModel):
     user_id: str
     name: str
     email: str
-    age: int
+    age: Optional[int]
     created_at: datetime
     message: str
 
-class ErrorResponse(BaseModel):
-    error: str
-    details: Optional[str] = None
-
-# Endpoint Implementation
-@router.post("/profile", 
-             response_model=UserProfileResponse,
-             status_code=201,
-             responses={
-                 400: {"model": ErrorResponse, "description": "Invalid input data"},
-                 422: {"model": ErrorResponse, "description": "Validation error"}
-             })
-async def create_user_profile(request: UserProfileRequest):
+# Endpoints
+@router.post("/profile", response_model=UserProfileResponse, status_code=201)
+async def create_user_profile(user_data: UserProfileRequest):
     \"\"\"
-    Create a new user profile with validation.
+    Create a new user profile.
     
-    - **name**: User's full name (1-100 characters)
-    - **email**: Valid email address
-    - **age**: Age between 1 and 120
-    
-    Returns the created user profile with generated ID.
+    Args:
+        user_data: User profile information
+        
+    Returns:
+        UserProfileResponse: Created user profile with ID and timestamp
+        
+    Raises:
+        HTTPException: If email already exists (example)
     \"\"\"
     try:
-        # Generate unique user ID
+        # In real implementation, check if email exists in database
+        # if await user_exists(user_data.email):
+        #     raise HTTPException(status_code=409, detail="Email already registered")
+        
+        # Generate user ID
         user_id = str(uuid.uuid4())
         
-        # Simulate business logic (e.g., check if email exists)
-        # In real implementation, this would interact with database
+        # In real implementation, save to database
+        # await save_user_to_db(user_id, user_data)
         
-        # Create response
-        user_profile = UserProfileResponse(
+        # Return response
+        return UserProfileResponse(
             user_id=user_id,
-            name=request.name,
-            email=request.email,
-            age=request.age,
+            name=user_data.name,
+            email=user_data.email,
+            age=user_data.age,
             created_at=datetime.utcnow(),
             message="User profile created successfully"
         )
         
-        return user_profile
-        
     except ValueError as e:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid input: {str(e)}"
-        )
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="Internal server error occurred"
-        )
+        # Log error in production
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.get("/profile/{user_id}", response_model=UserProfileResponse)
+async def get_user_profile(user_id: str):
+    \"\"\"Get user profile by ID.\"\"\"
+    # Example implementation
+    # user = await get_user_from_db(user_id)
+    # if not user:
+    #     raise HTTPException(status_code=404, detail="User not found")
+    
+    # Mock response for now
+    return UserProfileResponse(
+        user_id=user_id,
+        name="Test User",
+        email="test@example.com",
+        age=25,
+        created_at=datetime.utcnow(),
+        message="User profile retrieved successfully"
+    )
 
 # Health check endpoint
 @router.get("/health")
 async def health_check():
-    \"\"\"Health check for user service.\"\"\"
+    \"\"\"Check if the user service is running.\"\"\"
     return {"status": "healthy", "service": "user-profile"}
 ```
 
-## Unit Tests
-
 ```python
+# tests/test_user_profile.py
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from main import router  # Assuming main.py contains the router
+from app.routers.users import router
 
+# Setup test app
 app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
@@ -196,11 +204,13 @@ class TestUserProfile:
         response = client.post("/users/profile", json=payload)
         
         assert response.status_code == 422
+        error_data = response.json()
+        assert "age" in str(error_data).lower()
     
     def test_create_user_profile_empty_name(self):
         \"\"\"Test validation with empty name.\"\"\"
         payload = {
-            "name": "",
+            "name": "   ",
             "email": "john.doe@example.com",
             "age": 30
         }
@@ -209,16 +219,18 @@ class TestUserProfile:
         
         assert response.status_code == 422
     
-    def test_create_user_profile_missing_fields(self):
-        \"\"\"Test validation with missing required fields.\"\"\"
-        payload = {
-            "name": "John Doe"
-            # Missing email and age
-        }
+    def test_get_user_profile_success(self):
+        \"\"\"Test retrieving user profile.\"\"\"
+        user_id = "test-user-123"
         
-        response = client.post("/users/profile", json=payload)
+        response = client.get(f"/users/profile/{user_id}")
         
-        assert response.status_code == 422
+        assert response.status_code == 200
+        data = response.json()
+        assert data["user_id"] == user_id
+        assert "name" in data
+        assert "email" in data
+        assert "created_at" in data
     
     def test_health_check(self):
         \"\"\"Test health check endpoint.\"\"\"
@@ -247,15 +259,12 @@ class TestUserProfileIntegration:
         for user_data in users:
             response = client.post("/users/profile", json=user_data)
             assert response.status_code == 201
+            created_user = response.json()
+            created_users.append(created_user)
             
-            user_profile = response.json()
-            created_users.append(user_profile)
-            
-            # Verify all fields are present and correct
-            assert user_profile["name"] == user_data["name"]
-            assert user_profile["email"] == user_data["email"]
-            assert user_profile["age"] == user_data["age"]
-            assert len(user_profile["user_id"]) > 0
+            # Verify we can retrieve the user
+            get_response = client.get(f"/users/profile/{created_user['user_id']}")
+            assert get_response.status_code == 200
         
         # Verify all users have unique IDs
         user_ids = [user["user_id"] for user in created_users]
@@ -333,179 +342,249 @@ class DataProcessor:
 Production-ready Python code with proper error handling and async patterns.
 """
     
-    def _mock_testing_code(self) -> str:
-        """Generate mock testing code response."""
-        return """# 🧪 Backend Testing Implementation
+    def _mock_qa_testing_code(self) -> str:
+        """Generate mock QA testing code response."""
+        return """# 🧪 QA Testing Implementation
 
-## Testing Scope
-Comprehensive test suite for backend functionality with pytest.
+## Test Requirements
+Create comprehensive unit tests for a user authentication service that handles login, logout, and token refresh. Include tests for success cases, error handling, and edge cases.
 
 ## Test Implementation
 
 ```python
 import pytest
 import asyncio
-from unittest.mock import Mock, patch
-from datetime import datetime
+from unittest.mock import Mock, patch, AsyncMock
+from datetime import datetime, timedelta
+import jwt
+import bcrypt
 
-class TestUserService:
-    \"\"\"Test suite for user service functionality.\"\"\"
+from app.services.auth_service import AuthService
+from app.models.user import User
+from app.exceptions import AuthenticationError, TokenError
+
+class TestAuthService:
+    \"\"\"Comprehensive test suite for authentication service.\"\"\"
     
     @pytest.fixture
-    def mock_database(self):
-        \"\"\"Mock database connection.\"\"\"
-        db = Mock()
-        db.execute.return_value = Mock()
-        return db
+    def mock_user_repo(self):
+        \"\"\"Mock user repository.\"\"\"
+        repo = Mock()
+        repo.find_by_email = AsyncMock()
+        repo.create = AsyncMock()
+        repo.update = AsyncMock()
+        return repo
     
     @pytest.fixture
-    def user_service(self, mock_database):
-        \"\"\"Create user service with mocked dependencies.\"\"\"
-        from app.services.user_service import UserService
-        return UserService(database=mock_database)
+    def mock_token_store(self):
+        \"\"\"Mock token store for session management.\"\"\"
+        store = Mock()
+        store.store_token = AsyncMock()
+        store.get_token = AsyncMock()
+        store.revoke_token = AsyncMock()
+        return store
+    
+    @pytest.fixture
+    def auth_service(self, mock_user_repo, mock_token_store):
+        \"\"\"Create auth service with mocked dependencies.\"\"\"
+        return AuthService(
+            user_repository=mock_user_repo,
+            token_store=mock_token_store,
+            jwt_secret="test-secret-key",
+            token_expiry_minutes=30
+        )
+    
+    @pytest.fixture
+    def valid_user(self):
+        \"\"\"Create a valid test user.\"\"\"
+        hashed_password = bcrypt.hashpw(b"validpass123", bcrypt.gensalt())
+        return User(
+            id="user-123",
+            email="test@example.com",
+            password_hash=hashed_password.decode(),
+            is_active=True,
+            created_at=datetime.utcnow()
+        )
+    
+    # Success Cases
+    @pytest.mark.asyncio
+    async def test_login_with_valid_credentials(self, auth_service, mock_user_repo, valid_user):
+        \"\"\"Test successful login with valid credentials.\"\"\"
+        # Given
+        mock_user_repo.find_by_email.return_value = valid_user
+        credentials = {"email": "test@example.com", "password": "validpass123"}
+        
+        # When
+        result = await auth_service.login(credentials)
+        
+        # Then
+        assert result["success"] is True
+        assert "token" in result
+        assert "user" in result
+        assert result["user"]["email"] == "test@example.com"
+        mock_user_repo.find_by_email.assert_called_once_with("test@example.com")
     
     @pytest.mark.asyncio
-    async def test_create_user_success(self, user_service, mock_database):
-        \"\"\"Test successful user creation.\"\"\"
-        # Arrange
-        user_data = {
-            "name": "Test User",
-            "email": "test@example.com",
-            "age": 25
-        }
-        mock_database.execute.return_value.fetchone.return_value = {
-            "id": "user_123",
-            **user_data,
-            "created_at": datetime.utcnow()
-        }
+    async def test_token_generation_contains_required_claims(self, auth_service, valid_user):
+        \"\"\"Test JWT token contains all required claims.\"\"\"
+        # When
+        token = auth_service._generate_token(valid_user)
+        decoded = jwt.decode(token, "test-secret-key", algorithms=["HS256"])
         
-        # Act
-        result = await user_service.create_user(user_data)
+        # Then
+        assert decoded["sub"] == "user-123"
+        assert decoded["email"] == "test@example.com"
+        assert "exp" in decoded
+        assert "iat" in decoded
+        assert decoded["exp"] > decoded["iat"]
+    
+    # Error Cases
+    @pytest.mark.asyncio
+    async def test_login_with_invalid_email(self, auth_service, mock_user_repo):
+        \"\"\"Test login fails with non-existent email.\"\"\"
+        # Given
+        mock_user_repo.find_by_email.return_value = None
+        credentials = {"email": "nonexistent@example.com", "password": "anypass"}
         
-        # Assert
-        assert result["name"] == user_data["name"]
-        assert result["email"] == user_data["email"]
-        assert "id" in result
-        mock_database.execute.assert_called_once()
+        # When/Then
+        with pytest.raises(AuthenticationError, match="Invalid credentials"):
+            await auth_service.login(credentials)
     
     @pytest.mark.asyncio
-    async def test_create_user_duplicate_email(self, user_service, mock_database):
-        \"\"\"Test user creation with duplicate email.\"\"\"
-        # Arrange
-        user_data = {"name": "Test", "email": "existing@example.com", "age": 25}
-        mock_database.execute.side_effect = Exception("Email already exists")
+    async def test_login_with_wrong_password(self, auth_service, mock_user_repo, valid_user):
+        \"\"\"Test login fails with incorrect password.\"\"\"
+        # Given
+        mock_user_repo.find_by_email.return_value = valid_user
+        credentials = {"email": "test@example.com", "password": "wrongpassword"}
         
-        # Act & Assert
-        with pytest.raises(ValueError, match="Email already exists"):
-            await user_service.create_user(user_data)
+        # When/Then
+        with pytest.raises(AuthenticationError, match="Invalid credentials"):
+            await auth_service.login(credentials)
     
-    def test_validate_email_format(self, user_service):
-        \"\"\"Test email validation.\"\"\"
-        valid_emails = [
-            "test@example.com",
-            "user.name+tag@domain.co.uk",
-            "user123@test-domain.com"
+    # Edge Cases
+    @pytest.mark.asyncio
+    async def test_login_with_empty_credentials(self, auth_service):
+        \"\"\"Test login fails with empty credentials.\"\"\"
+        # Given
+        test_cases = [
+            {"email": "", "password": "password"},
+            {"email": "test@example.com", "password": ""},
+            {"email": "", "password": ""},
+            {},
+            None
         ]
         
-        invalid_emails = [
-            "invalid-email",
-            "@domain.com",
-            "user@",
-            "user@domain",
-            ""
-        ]
+        # When/Then
+        for credentials in test_cases:
+            with pytest.raises((AuthenticationError, ValueError)):
+                await auth_service.login(credentials)
+    
+    @pytest.mark.parametrize("invalid_email", [
+        "notanemail",
+        "@example.com",
+        "user@",
+        "user@.com",
+        "user@domain",
+        "user space@example.com",
+        None,
+        123,
+        ["user@example.com"]
+    ])
+    @pytest.mark.asyncio
+    async def test_login_with_invalid_email_formats(self, auth_service, invalid_email):
+        \"\"\"Test login rejects various invalid email formats.\"\"\"
+        # Given
+        credentials = {"email": invalid_email, "password": "password"}
         
-        for email in valid_emails:
-            assert user_service.validate_email(email) == True
-            
-        for email in invalid_emails:
-            assert user_service.validate_email(email) == False
+        # When/Then
+        with pytest.raises((AuthenticationError, ValueError)):
+            await auth_service.login(credentials)
 
+# Integration Tests
 @pytest.mark.integration
-class TestUserAPI:
-    \"\"\"Integration tests for user API endpoints.\"\"\"
+class TestAuthServiceIntegration:
+    \"\"\"Integration tests for authentication service with real dependencies.\"\"\"
     
     @pytest.fixture
-    def client(self):
-        \"\"\"Create test client.\"\"\"
-        from fastapi.testclient import TestClient
-        from app.main import app
-        return TestClient(app)
-    
-    def test_create_user_endpoint_success(self, client):
-        \"\"\"Test successful user creation via API.\"\"\"
-        payload = {
-            "name": "Integration Test User",
-            "email": "integration@test.com",
-            "age": 30
-        }
+    async def real_auth_service(self, test_db, redis_client):
+        \"\"\"Create auth service with real dependencies.\"\"\"
+        from app.repositories.user_repository import UserRepository
+        from app.services.token_store import RedisTokenStore
         
-        response = client.post("/users/profile", json=payload)
+        user_repo = UserRepository(test_db)
+        token_store = RedisTokenStore(redis_client)
         
-        assert response.status_code == 201
-        data = response.json()
-        assert data["name"] == payload["name"]
-        assert data["email"] == payload["email"]
-        assert "user_id" in data
-    
-    def test_create_user_endpoint_validation_error(self, client):
-        \"\"\"Test API validation errors.\"\"\"
-        invalid_payloads = [
-            {"name": "", "email": "test@example.com", "age": 25},  # Empty name
-            {"name": "Test", "email": "invalid-email", "age": 25},  # Invalid email
-            {"name": "Test", "email": "test@example.com", "age": -1},  # Invalid age
-            {"email": "test@example.com", "age": 25},  # Missing name
-        ]
-        
-        for payload in invalid_payloads:
-            response = client.post("/users/profile", json=payload)
-            assert response.status_code == 422
-
-# Performance tests
-@pytest.mark.performance
-class TestPerformance:
-    \"\"\"Performance tests for critical paths.\"\"\"
+        return AuthService(
+            user_repository=user_repo,
+            token_store=token_store,
+            jwt_secret="integration-test-secret",
+            token_expiry_minutes=30
+        )
     
     @pytest.mark.asyncio
-    async def test_concurrent_user_creation(self, user_service):
-        \"\"\"Test concurrent user creation performance.\"\"\"
-        import time
+    async def test_full_authentication_flow(self, real_auth_service):
+        \"\"\"Test complete authentication flow: register, login, refresh, logout.\"\"\"
+        # Register
+        registration_data = {
+            "email": "newuser@example.com",
+            "password": "securepass123",
+            "name": "Test User"
+        }
+        user = await real_auth_service.register(registration_data)
+        assert user["email"] == "newuser@example.com"
         
-        # Create test data
-        users = [
-            {"name": f"User {i}", "email": f"user{i}@test.com", "age": 25}
-            for i in range(100)
-        ]
+        # Login
+        login_result = await real_auth_service.login({
+            "email": "newuser@example.com",
+            "password": "securepass123"
+        })
+        assert login_result["success"] is True
+        token = login_result["token"]
         
-        # Measure concurrent creation time
-        start_time = time.time()
+        # Validate token
+        validation = await real_auth_service.validate_token(token)
+        assert validation["valid"] is True
         
-        tasks = [user_service.create_user(user) for user in users]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # Refresh token
+        new_token = await real_auth_service.refresh_token(token)
+        assert new_token != token
         
-        end_time = time.time()
-        duration = end_time - start_time
+        # Logout
+        logout_result = await real_auth_service.logout(new_token)
+        assert logout_result["success"] is True
         
-        # Performance assertions
-        assert duration < 5.0  # Should complete within 5 seconds
-        successful_results = [r for r in results if not isinstance(r, Exception)]
-        assert len(successful_results) == len(users)
+        # Verify token is revoked
+        with pytest.raises(TokenError):
+            await real_auth_service.validate_token(new_token)
 ```
 
-## Testing Coverage
-- **Unit Tests**: Business logic and individual functions
-- **Integration Tests**: API endpoints and database interactions  
-- **Edge Cases**: Error conditions and boundary testing
-- **Performance Tests**: Load and stress testing considerations
+## Quality Checklist
+- ✅ Tests are independent and isolated
+- ✅ Clear test names following conventions  
+- ✅ Both happy paths and edge cases covered
+- ✅ Proper setup and teardown
+- ✅ No hardcoded test data
+- ✅ Tests run quickly and reliably
+- ✅ Coverage targets met
 
 ## Test Execution
-Run tests with: `pytest tests/ -v --cov=app --cov-report=html`
+Run tests with:
+- Unit tests: `pytest tests/unit -v --cov`
+- Integration: `pytest tests/integration -v`
+- E2E: `playwright test`
+- All tests: `npm test && pytest`
 
-## Coverage Goals
-Target minimum 80% test coverage. Focus on critical business logic and error paths.
+## Coverage Analysis
+Target: 80% overall, 100% for critical paths. Generate reports with coverage tools.
+
+## Next Steps
+1. Run test suite
+2. Analyze coverage gaps
+3. Add missing edge cases
+4. Integrate with CI/CD
 
 ---
-*Backend Testing Specialist | 2025-06-01 18:58*
+*QA Engineer Agent | 2025-06-01 19:58*
 """
     
     def _mock_frontend_development(self) -> str:
@@ -699,26 +778,6 @@ export const LoginForm: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="/forgot-password" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Forgot your password?
-              </a>
-            </div>
-          </div>
-
           <div>
             <button
               type="submit"
@@ -738,153 +797,11 @@ export const LoginForm: React.FC = () => {
               )}
             </button>
           </div>
-
-          <div className="text-center">
-            <span className="text-sm text-gray-600">
-              Don't have an account?{' '}
-              <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-500">
-                Sign up
-              </a>
-            </span>
-          </div>
         </form>
       </div>
     </div>
   );
 };
-```
-
-```tsx
-// LoginForm.test.tsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
-import { LoginForm } from './LoginForm';
-import { apiService } from '../../services/api';
-
-// Mock API service
-jest.mock('../../services/api');
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { retry: false },
-    mutations: { retry: false }
-  }
-});
-
-const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <QueryClientProvider client={queryClient}>
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
-  </QueryClientProvider>
-);
-
-describe('LoginForm', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('renders login form correctly', () => {
-    render(
-      <TestWrapper>
-        <LoginForm />
-      </TestWrapper>
-    );
-
-    expect(screen.getByText('Sign in to your account')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Email address')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
-  });
-
-  it('validates email field', async () => {
-    const user = userEvent.setup();
-    
-    render(
-      <TestWrapper>
-        <LoginForm />
-      </TestWrapper>
-    );
-
-    const submitButton = screen.getByRole('button', { name: 'Sign in' });
-    
-    // Submit without email
-    await user.click(submitButton);
-    expect(screen.getByText('Email is required')).toBeInTheDocument();
-    
-    // Invalid email format
-    const emailInput = screen.getByPlaceholderText('Email address');
-    await user.type(emailInput, 'invalid-email');
-    await user.click(submitButton);
-    expect(screen.getByText('Invalid email format')).toBeInTheDocument();
-  });
-
-  it('validates password field', async () => {
-    const user = userEvent.setup();
-    
-    render(
-      <TestWrapper>
-        <LoginForm />
-      </TestWrapper>
-    );
-
-    const emailInput = screen.getByPlaceholderText('Email address');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const submitButton = screen.getByRole('button', { name: 'Sign in' });
-    
-    // Valid email, short password
-    await user.type(emailInput, 'test@example.com');
-    await user.type(passwordInput, 'short');
-    await user.click(submitButton);
-    
-    expect(screen.getByText('Password must be at least 8 characters')).toBeInTheDocument();
-  });
-
-  it('toggles password visibility', async () => {
-    const user = userEvent.setup();
-    
-    render(
-      <TestWrapper>
-        <LoginForm />
-      </TestWrapper>
-    );
-
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const toggleButton = screen.getByLabelText('Show password');
-    
-    // Initially password is hidden
-    expect(passwordInput).toHaveAttribute('type', 'password');
-    
-    // Click to show password
-    await user.click(toggleButton);
-    expect(passwordInput).toHaveAttribute('type', 'text');
-    
-    // Click to hide password again
-    await user.click(screen.getByLabelText('Hide password'));
-    expect(passwordInput).toHaveAttribute('type', 'password');
-  });
-
-  it('is accessible', () => {
-    const { container } = render(
-      <TestWrapper>
-        <LoginForm />
-      </TestWrapper>
-    );
-
-    // Check for proper ARIA attributes
-    const emailInput = screen.getByPlaceholderText('Email address');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    
-    expect(emailInput).toHaveAttribute('aria-invalid', 'false');
-    expect(passwordInput).toHaveAttribute('aria-invalid', 'false');
-    
-    // Check for labels (even if visually hidden)
-    expect(screen.getByLabelText('Email address')).toBeInTheDocument();
-    expect(screen.getByLabelText('Password')).toBeInTheDocument();
-  });
-});
 ```
 
 ## Code Quality Checklist
