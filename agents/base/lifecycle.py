@@ -7,9 +7,10 @@ health monitoring, graceful shutdown, and recovery mechanisms.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -613,7 +614,7 @@ class AgentLifecycleManager:
         try:
             # Wait for current operations to complete (with timeout)
             await asyncio.wait_for(self._wait_for_idle(), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"Graceful shutdown timeout for agent {self.agent_id}")
 
     async def _wait_for_idle(self) -> None:

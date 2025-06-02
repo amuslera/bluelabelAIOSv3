@@ -8,15 +8,16 @@ without requiring real API keys.
 import asyncio
 import logging
 import time
+from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from typing import List
 
 from .base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
-    ModelInfo,
     ModelCapability,
+    ModelInfo,
     ModelSize,
     ModelType,
     ProviderConfig,
@@ -28,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 class MockConfig(ProviderConfig):
     """Configuration for mock provider."""
-    
+
     response_delay: float = 1.0  # Simulate API delay
     failure_rate: float = 0.0    # Simulate API failures (0.0 = never fail)
 
@@ -40,7 +41,7 @@ class MockProvider(LLMProvider):
     Useful for testing, development, and demonstrations when
     real API keys are not available.
     """
-    
+
     # Mock model definitions
     MOCK_MODELS = {
         "mock-cto-model": ModelInfo(
@@ -66,50 +67,50 @@ class MockProvider(LLMProvider):
             availability=1.0,
         ),
     }
-    
+
     def __init__(self, config: MockConfig):
         """Initialize mock provider."""
         super().__init__(config)
         self.config: MockConfig = config
         self._request_count = 0
-    
+
     async def initialize(self) -> None:
         """Initialize the mock provider."""
         logger.info("Initializing mock LLM provider")
         self._models = self.MOCK_MODELS.copy()
         logger.info(f"Mock provider initialized with {len(self._models)} models")
-    
+
     async def generate(self, request: LLMRequest) -> LLMResponse:
         """Generate a mock response."""
         start_time = time.time()
         self._request_count += 1
-        
+
         # Simulate API delay
         if self.config.response_delay > 0:
             await asyncio.sleep(self.config.response_delay)
-        
+
         # Simulate failure rate
         if self.config.failure_rate > 0:
             import random
             if random.random() < self.config.failure_rate:
                 raise Exception("Simulated API failure")
-        
+
         # Extract user message content
         user_content = ""
         for message in request.messages:
             if message.get("role") == "user":
                 user_content = message.get("content", "")
                 break
-        
+
         # Generate mock response based on content
         mock_content = self._generate_mock_content(user_content)
-        
+
         response_time = (time.time() - start_time) * 1000
-        
+
         # Simulate token usage
         input_tokens = len(user_content.split()) * 1.3  # Rough approximation
         output_tokens = len(mock_content.split()) * 1.3
-        
+
         return LLMResponse(
             content=mock_content,
             model_id=request.model_id,
@@ -124,21 +125,21 @@ class MockProvider(LLMProvider):
             finish_reason="stop",
             request_id=f"mock_req_{self._request_count}",
         )
-    
+
     async def generate_stream(self, request: LLMRequest) -> AsyncIterator[str]:
         """Generate a mock streaming response."""
         content = await self.generate(request)
-        
+
         # Stream the response word by word
         words = content.content.split()
         for word in words:
             yield word + " "
             await asyncio.sleep(0.1)  # Simulate streaming delay
-    
-    async def get_models(self) -> list[ModelInfo]:
+
+    async def get_models(self) -> List[ModelInfo]:
         """Get list of mock models."""
         return list(self._models.values())
-    
+
     async def health_check(self) -> ProviderHealthStatus:
         """Perform mock health check."""
         return ProviderHealthStatus(
@@ -148,31 +149,31 @@ class MockProvider(LLMProvider):
             available_models=list(self._models.keys()),
             status_message="Mock provider is always healthy",
         )
-    
+
     async def shutdown(self) -> None:
         """Shutdown mock provider."""
         logger.info("Mock provider shutdown completed")
-    
+
     def _generate_mock_content(self, user_content: str) -> str:
         """Generate mock content based on user input."""
         user_lower = user_content.lower()
-        
+
         # Architecture and technology decisions
         if any(word in user_lower for word in ["architecture", "messaging", "websocket", "grpc", "message queue"]):
             return self._mock_architecture_decision()
-        
+
         # Code review responses
         elif any(word in user_lower for word in ["code review", "review code", "code quality"]):
             return self._mock_code_review()
-        
+
         # Technical strategy
         elif any(word in user_lower for word in ["strategy", "roadmap", "planning", "technical plan"]):
             return self._mock_technical_strategy()
-        
+
         # General CTO responses
         else:
             return self._mock_general_cto_response(user_content)
-    
+
     def _mock_architecture_decision(self) -> str:
         """Generate mock architecture decision response."""
         return """# 🏗️ Architectural Analysis

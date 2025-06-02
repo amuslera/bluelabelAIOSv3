@@ -7,13 +7,12 @@ resilience patterns for agent failures.
 
 import asyncio
 import logging
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
-
-from .lifecycle import AgentState
 
 logger = logging.getLogger(__name__)
 
@@ -303,7 +302,7 @@ class RecoveryManager:
 
             return True
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.error(f"Recovery timeout for agent {self.agent_id}")
             return False
         except Exception as e:

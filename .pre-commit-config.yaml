@@ -37,6 +37,19 @@ repos:
         args: [-r, ., -f, json, -o, bandit-report.json]
         exclude: ^tests/
 
+  # Secrets detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: |
+          (?x)^(
+              \.secrets\.baseline|
+              \.env\.example|
+              tests/.*
+          )$
+
   # General hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0

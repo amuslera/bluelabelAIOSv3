@@ -7,12 +7,12 @@ integration for agent lifecycle management.
 
 import asyncio
 import logging
-import psutil
-import time
-from datetime import datetime, timedelta
+from collections.abc import Callable
+from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Union
 
+import psutil
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
@@ -307,7 +307,7 @@ class HealthMonitor:
             self._metrics[check_name] = metric
             return metric
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"Health check {check_name} timed out")
             self._handle_check_failure(check_name, "Timeout")
             return None

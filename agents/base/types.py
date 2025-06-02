@@ -6,7 +6,7 @@ Defines agent lifecycle states, types, capabilities, and metadata schemas.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -93,12 +93,12 @@ class AgentCapability(BaseModel):
 
     name: str
     description: str
-    task_types: list[TaskType]
-    complexity_range: tuple[int, int] = (
+    task_types: List[TaskType]
+    complexity_range: Tuple[int, int] = (
         1,
         10,
     )  # Min and max complexity this capability can handle
-    requires_tools: list[str] = Field(default_factory=list)
+    requires_tools: List[str] = Field(default_factory=list)
     confidence_level: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
@@ -113,8 +113,8 @@ class AgentMetadata(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     owner: str = "system"
-    tags: list[str] = Field(default_factory=list)
-    capabilities: list[AgentCapability] = Field(default_factory=list)
+    tags: List[str] = Field(default_factory=list)
+    capabilities: List[AgentCapability] = Field(default_factory=list)
 
 
 class AgentHealth(BaseModel):
@@ -142,7 +142,7 @@ class AgentStats(BaseModel):
     tasks_failed: int = 0
     average_execution_time: float = 0.0
     total_cost: float = 0.0
-    models_used: dict[str, int] = Field(default_factory=dict)
+    models_used: Dict[str, int] = Field(default_factory=dict)
     success_rate: float = 1.0
     last_active: datetime = Field(default_factory=datetime.utcnow)
 
@@ -153,7 +153,7 @@ class RegistrationRequest(BaseModel):
     metadata: AgentMetadata
     initial_state: AgentState = AgentState.INITIALIZING
     endpoint: Optional[str] = None  # For remote agents
-    config: dict[str, Any] = Field(default_factory=dict)
+    config: Dict[str, Any] = Field(default_factory=dict)
 
 
 class RegistrationResponse(BaseModel):
@@ -162,7 +162,7 @@ class RegistrationResponse(BaseModel):
     success: bool
     agent_id: str
     message: str
-    assigned_queues: list[str] = Field(default_factory=list)
+    assigned_queues: List[str] = Field(default_factory=list)
     registry_endpoint: Optional[str] = None
 
 
@@ -277,7 +277,7 @@ DEFAULT_CAPABILITIES = {
 }
 
 
-def get_default_capabilities(agent_type: AgentType) -> list[AgentCapability]:
+def get_default_capabilities(agent_type: AgentType) -> List[AgentCapability]:
     """Get the default capabilities for an agent type."""
     return DEFAULT_CAPABILITIES.get(
         agent_type, DEFAULT_CAPABILITIES[AgentType.GENERALIST]

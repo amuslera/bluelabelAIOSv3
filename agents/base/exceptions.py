@@ -5,7 +5,7 @@ Provides structured error handling for agent operations, task execution,
 and system integration failures.
 """
 
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 class AgentError(Exception):
@@ -22,7 +22,7 @@ class AgentError(Exception):
         self.error_code = error_code
         self.message = message
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary for serialization."""
         return {
             "error_type": self.__class__.__name__,
@@ -89,7 +89,7 @@ class TaskValidationError(AgentError):
         message: str,
         agent_id: Optional[str] = None,
         task_id: Optional[str] = None,
-        validation_errors: Optional[list[str]] = None,
+        validation_errors: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "TASK_VALIDATION_FAILED")
         self.task_id = task_id
@@ -119,7 +119,7 @@ class AgentCapabilityError(AgentError):
         message: str,
         agent_id: Optional[str] = None,
         required_capability: Optional[str] = None,
-        available_capabilities: Optional[list[str]] = None,
+        available_capabilities: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "INSUFFICIENT_CAPABILITY")
         self.required_capability = required_capability
@@ -177,7 +177,7 @@ class LLMRoutingError(AgentError):
         message: str,
         agent_id: Optional[str] = None,
         requested_model: Optional[str] = None,
-        available_models: Optional[list[str]] = None,
+        available_models: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "LLM_ROUTING_FAILED")
         self.requested_model = requested_model
@@ -296,7 +296,7 @@ def is_retryable_error(error: Exception) -> bool:
 
 def create_error_context(
     error: Exception, agent_id: Optional[str] = None, task_id: Optional[str] = None
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     """Create error context for logging and monitoring."""
     context = {
         "error_type": type(error).__name__,
