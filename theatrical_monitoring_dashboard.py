@@ -6,9 +6,16 @@ live updates, progress tracking, and detailed communication logs.
 """
 
 import asyncio
+import logging
 import time
 from datetime import datetime
 from typing import Dict, Optional
+
+# Suppress console logging when running dashboard
+logging.getLogger().setLevel(logging.ERROR)
+# Specifically suppress noisy loggers
+for logger_name in ['agents.base', 'core.routing', 'httpx']:
+    logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 from textual import on
 from textual.app import App, ComposeResult
@@ -31,29 +38,56 @@ from theatrical_orchestrator import TheatricalEvent, TheatricalOrchestrator
 
 
 class AgentStatusWidget(Static):
-    """Widget displaying individual agent status."""
-
-    agent_id: reactive[str] = reactive("")
-    status: reactive[str] = reactive("idle")
-    progress: reactive[int] = reactive(0)
-    current_task: reactive[str] = reactive("None")
+    """Widget displaying individual agent status with activity log and metrics."""
 
     def __init__(self, agent_id: str, agent_name: str, **kwargs):
         super().__init__(**kwargs)
+        # Store all attributes as regular attributes
         self.agent_id = agent_id
         self.agent_name = agent_name
         self.last_update = time.time()
+        self.status = "idle"
+        self.progress = 0
+        self.current_task = "None"
+        # Performance metrics
+        self.tasks_assigned = 0
+        self.tasks_completed = 0
+        self.total_time = 0.0
+        self.total_cost = 0.0
+        self.total_tokens = 0
+        self.task_start_time = None
+        # Activity history (keep last 4)
+        self.recent_activities = ["", "", "", ""]
+        # Will store direct references to activity labels
+        self.activity_labels = []
 
     def compose(self) -> ComposeResult:
-        """Create agent status display."""
-        with Vertical():
-            yield Label(self.agent_name, classes="agent-name")
-            yield Label(f"Status: {self.status}", id=f"status-{self.agent_id}")
-            yield ProgressBar(total=100, show_eta=False, id=f"progress-{self.agent_id}")
-            yield Label(f"Task: {self.current_task[:30]}...", id=f"task-{self.agent_id}")
+        """Create agent status display with simple layout."""
+        # Main content area with horizontal split
+        with Horizontal(classes="agent-content"):
+            # Left side: Recent activities with compact header (70% width)
+            with Vertical(classes="agent-activity"):
+                # Compact agent header
+                yield Label(f"{self.agent_name}", classes="agent-header")
+                # Create 4 labels for recent activities - store references  
+                self.activity_labels = []
+                for i in range(4):
+                    # Start with empty labels - will be filled with real activities
+                    label = Label("", id=f"activity-{self.agent_id}-{i}", classes="activity-line")
+                    self.activity_labels.append(label)
+                    yield label
+            
+            # Right side: Metrics and progress (30% width)
+            with Vertical(classes="agent-metrics"):
+                yield Label(f"Status: {self.status}", id=f"status-{self.agent_id}")
+                yield ProgressBar(total=100, show_eta=False, id=f"progress-{self.agent_id}")
+                yield Label(f"Tasks: 0/0", id=f"tasks-{self.agent_id}")
+                yield Label(f"Time: 0.0s", id=f"time-{self.agent_id}")
+                yield Label(f"Cost: $0.0000", id=f"cost-{self.agent_id}")
+                yield Label(f"Tokens: 0", id=f"tokens-{self.agent_id}")
 
     def update_status(self, status: str, progress: Optional[int] = None, task: Optional[str] = None):
-        """Update agent status display."""
+        """Update agent status display and log history."""
         self.status = status
         if progress is not None:
             self.progress = progress
@@ -62,17 +96,84 @@ class AgentStatusWidget(Static):
 
         self.last_update = time.time()
 
+        # Track task assignment and completion
+        if status == "thinking" and self.task_start_time is None:
+            self.tasks_assigned += 1
+            self.task_start_time = time.time()
+        elif status == "success" and self.task_start_time is not None:
+            self.tasks_completed += 1
+            self.total_time += time.time() - self.task_start_time
+            self.task_start_time = None
+
         # Update UI elements
-        status_label = self.query_one(f"#status-{self.agent_id}", Label)
-        status_label.update(f"Status: {status}")
+        try:
+            status_label = self.query_one(f"#status-{self.agent_id}", Label)
+            status_label.update(f"Status: {status}")
+        except:
+            pass
 
         if progress is not None:
-            progress_bar = self.query_one(f"#progress-{self.agent_id}", ProgressBar)
-            progress_bar.progress = progress
+            try:
+                progress_bar = self.query_one(f"#progress-{self.agent_id}", ProgressBar)
+                progress_bar.progress = progress
+            except:
+                pass
 
-        if task is not None:
-            task_label = self.query_one(f"#task-{self.agent_id}", Label)
-            task_label.update(f"Task: {task[:30]}...")
+        # Update task counter
+        try:
+            tasks_label = self.query_one(f"#tasks-{self.agent_id}", Label)
+            tasks_label.update(f"Tasks: {self.tasks_completed}/{self.tasks_assigned}")
+        except:
+            pass
+
+        # Update time
+        try:
+            time_label = self.query_one(f"#time-{self.agent_id}", Label)
+            time_label.update(f"Time: {self.total_time:.1f}s")
+        except:
+            pass
+
+        # Add new activity to rolling buffer - ALWAYS add, even if task is None
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        
+        if task:
+            display_task = task if len(task) <= 60 else task[:57] + "..."
+            activity_text = f"{timestamp} {status}: {display_task}"
+        else:
+            activity_text = f"{timestamp} Status changed to: {status}"
+        
+        # Update rolling buffer (shift old activities and add new one)
+        self.recent_activities = [activity_text] + self.recent_activities[:3]
+        
+        # DIRECT UPDATE: Use the same approach that worked for debug
+        if hasattr(self, 'activity_labels') and self.activity_labels:
+            try:
+                # Update all 4 lines with our activity buffer
+                for i in range(min(4, len(self.activity_labels))):
+                    if i < len(self.recent_activities) and self.recent_activities[i]:
+                        self.activity_labels[i].update(self.recent_activities[i])
+                        self.activity_labels[i].refresh()
+                    else:
+                        self.activity_labels[i].update("")  # Clear unused lines
+                        self.activity_labels[i].refresh()
+            except Exception as e:
+                # If there's still an error, just show the latest activity simply
+                if self.recent_activities:
+                    self.activity_labels[0].update(self.recent_activities[0])
+                    self.activity_labels[0].refresh()
+
+    def _update_activity_lines(self):
+        """Update the activity lines with current buffer content."""
+        # Use the same direct approach that works for the test
+        if hasattr(self, 'activity_labels') and self.activity_labels:
+            for i in range(min(4, len(self.activity_labels))):
+                try:
+                    if i < len(self.recent_activities) and self.recent_activities[i]:
+                        # Use the same direct update method that worked for the test
+                        self.activity_labels[i].update(self.recent_activities[i])
+                        self.activity_labels[i].refresh()
+                except Exception as e:
+                    pass
 
     def get_status_icon(self) -> str:
         """Get status icon."""
@@ -85,6 +186,47 @@ class AgentStatusWidget(Static):
             "active": "🟢"
         }
         return icons.get(self.status, "❓")
+    
+    def update_metrics(self, cost: Optional[float] = None, tokens: Optional[int] = None):
+        """Update cost and token metrics."""
+        if cost is not None:
+            self.total_cost += cost
+            cost_label = self.query_one(f"#cost-{self.agent_id}", Label)
+            cost_label.update(f"Cost: ${self.total_cost:.4f}")
+            
+        if tokens is not None:
+            self.total_tokens += tokens
+            tokens_label = self.query_one(f"#tokens-{self.agent_id}", Label)
+            tokens_label.update(f"Tokens: {self.total_tokens:,}")
+    
+    def clear_log(self):
+        """Clear the agent's activity log and reset metrics."""
+        # Clear activity buffer
+        self.recent_activities = ["", "", "", ""]
+        
+        # Clear activity display lines using direct references if available
+        if hasattr(self, 'activity_labels') and self.activity_labels:
+            for label in self.activity_labels:
+                try:
+                    label.update("")  # Clear to empty
+                except:
+                    pass
+        else:
+            # Fallback to query selectors
+            for i in range(4):
+                try:
+                    activity_label = self.query_one(f"#activity-{self.agent_id}-{i}", Label)
+                    activity_label.update("")  # Clear to empty, not placeholder
+                except:
+                    pass
+            
+        # Reset metrics
+        self.tasks_assigned = 0
+        self.tasks_completed = 0
+        self.total_time = 0.0
+        self.total_cost = 0.0
+        self.total_tokens = 0
+        self.task_start_time = None
 
 
 class EventLogWidget(Log):
@@ -122,10 +264,13 @@ class EventLogWidget(Log):
 class ProjectMetricsWidget(Static):
     """Widget showing project-wide metrics."""
 
-    total_cost: reactive[float] = reactive(0.0)
-    total_time: reactive[float] = reactive(0.0)
-    total_tokens: reactive[int] = reactive(0)
-    phases_complete: reactive[int] = reactive(0)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Initialize as regular attributes
+        self.total_cost = 0.0
+        self.total_time = 0.0
+        self.total_tokens = 0
+        self.phases_complete = 0
 
     def compose(self) -> ComposeResult:
         """Create metrics display."""
@@ -167,23 +312,47 @@ class TheatricalMonitoringApp(App):
 
     CSS = """
     .agent-panel {
-        width: 1fr;
-        height: 1fr;
+        width: 100%;
+        height: 20%;
         border: solid $primary;
         margin: 1;
+        padding: 1;
     }
 
-    .agent-name {
+    .agent-header {
+        background: $surface;
+        color: $text;
         text-align: center;
-        background: $primary;
-        color: $text-on-primary;
+        height: 1;
         margin-bottom: 1;
+    }
+
+    .agent-content {
+        height: 100%;
+    }
+    
+    .agent-activity {
+        width: 70%;
+        padding-right: 1;
+        border-right: solid $surface;
+    }
+    
+    .agent-metrics {
+        width: 30%;
+        padding-left: 1;
+    }
+    
+    .activity-line {
+        height: 1fr;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 1;
     }
 
     .section-title {
         text-align: center;
         background: $secondary;
-        color: $text-on-secondary;
+        color: $text;
         margin-bottom: 1;
     }
 
@@ -217,7 +386,7 @@ class TheatricalMonitoringApp(App):
         self.agent_widgets: Dict[str, AgentStatusWidget] = {}
         self.event_log: Optional[EventLogWidget] = None
         self.metrics_widget: Optional[ProjectMetricsWidget] = None
-        self.is_running = False
+        self.demo_running = False  # Use a different name to avoid conflict
         self.start_time: Optional[float] = None
 
     def compose(self) -> ComposeResult:
@@ -227,37 +396,38 @@ class TheatricalMonitoringApp(App):
         with Container():
             with TabbedContent():
                 with TabPane("Agent Orchestra", id="agents-tab"):
-                    with Horizontal():
-                        # Agent status panels
-                        with Vertical(classes="agent-panel"):
-                            self.agent_widgets["cto-001"] = AgentStatusWidget(
-                                "cto-001", "🏛️ CTO Agent"
-                            )
-                            yield self.agent_widgets["cto-001"]
+                    # Changed from Horizontal to Vertical for stacked layout
+                    with Vertical():
+                        # Agent status panels - now stacked vertically
+                        self.agent_widgets["cto-001"] = AgentStatusWidget(
+                            "cto-001", "🏛️ CTO Agent"
+                        )
+                        self.agent_widgets["cto-001"].classes = "agent-panel"
+                        yield self.agent_widgets["cto-001"]
 
-                        with Vertical(classes="agent-panel"):
-                            self.agent_widgets["backend-001"] = AgentStatusWidget(
-                                "backend-001", "⚙️ Backend Dev"
-                            )
-                            yield self.agent_widgets["backend-001"]
+                        self.agent_widgets["backend-001"] = AgentStatusWidget(
+                            "backend-001", "⚙️ Backend Dev"
+                        )
+                        self.agent_widgets["backend-001"].classes = "agent-panel"
+                        yield self.agent_widgets["backend-001"]
 
-                        with Vertical(classes="agent-panel"):
-                            self.agent_widgets["frontend-001"] = AgentStatusWidget(
-                                "frontend-001", "🎨 Frontend Dev"
-                            )
-                            yield self.agent_widgets["frontend-001"]
+                        self.agent_widgets["frontend-001"] = AgentStatusWidget(
+                            "frontend-001", "🎨 Frontend Dev"
+                        )
+                        self.agent_widgets["frontend-001"].classes = "agent-panel"
+                        yield self.agent_widgets["frontend-001"]
 
-                        with Vertical(classes="agent-panel"):
-                            self.agent_widgets["qa-001"] = AgentStatusWidget(
-                                "qa-001", "🧪 QA Engineer"
-                            )
-                            yield self.agent_widgets["qa-001"]
+                        self.agent_widgets["qa-001"] = AgentStatusWidget(
+                            "qa-001", "🧪 QA Engineer"
+                        )
+                        self.agent_widgets["qa-001"].classes = "agent-panel"
+                        yield self.agent_widgets["qa-001"]
 
-                        with Vertical(classes="agent-panel"):
-                            self.agent_widgets["devops-001"] = AgentStatusWidget(
-                                "devops-001", "🚀 DevOps"
-                            )
-                            yield self.agent_widgets["devops-001"]
+                        self.agent_widgets["devops-001"] = AgentStatusWidget(
+                            "devops-001", "🚀 DevOps"
+                        )
+                        self.agent_widgets["devops-001"].classes = "agent-panel"
+                        yield self.agent_widgets["devops-001"]
 
                 with TabPane("Event Log", id="log-tab"):
                     with Horizontal():
@@ -294,16 +464,24 @@ class TheatricalMonitoringApp(App):
     @on(Button.Pressed, "#start-btn")
     async def start_demo(self):
         """Start the theatrical demo."""
-        if self.is_running:
+        if self.demo_running:
             self.notify("Demo already running!", severity="warning")
             return
 
-        self.is_running = True
+        self.demo_running = True
         self.start_time = time.time()
 
-        # Reset displays
+        # Reset displays and start with real activities
         for widget in self.agent_widgets.values():
-            widget.update_status("idle", 0, "Waiting...")
+            # First, put a simple test in the first line to verify it works
+            if hasattr(widget, 'activity_labels') and widget.activity_labels:
+                try:
+                    widget.activity_labels[0].update("Activity system ready...")
+                    widget.activity_labels[0].refresh()
+                except:
+                    pass
+            
+            widget.update_status("idle", 0, "Demo starting - waiting for initialization...")
 
         if self.event_log:
             self.event_log.clear()
@@ -313,6 +491,10 @@ class TheatricalMonitoringApp(App):
             theatrical_delay=1.5,  # Faster for dashboard
             show_details=True
         )
+        
+        # Suppress orchestrator's console logging
+        import logging
+        logging.getLogger('theatrical_orchestrator').setLevel(logging.ERROR)
 
         # Start monitoring task
         asyncio.create_task(self._run_orchestration())
@@ -327,9 +509,10 @@ class TheatricalMonitoringApp(App):
     @on(Button.Pressed, "#reset-btn")
     def reset_demo(self):
         """Reset the demo."""
-        self.is_running = False
+        self.demo_running = False
 
         for widget in self.agent_widgets.values():
+            widget.clear_log()  # Clear the history log
             widget.update_status("idle", 0, "Ready")
 
         if self.event_log:
@@ -365,17 +548,23 @@ class TheatricalMonitoringApp(App):
             # Start the project
             project = "Real-time Chat Application with WebSocket support, user authentication, and message history"
 
-            # Monitor orchestration events
-            asyncio.create_task(self._monitor_events())
+            # Start monitoring BEFORE orchestration begins
+            monitor_task = asyncio.create_task(self._monitor_events())
+            
+            # Small delay to ensure monitoring is active
+            await asyncio.sleep(0.1)
 
             await self.orchestrator.orchestrate_project(project)
+            
+            # Cancel monitoring task when done
+            monitor_task.cancel()
 
             self.notify("🎉 Orchestration completed successfully!", severity="success")
 
         except Exception as e:
             self.notify(f"❌ Orchestration failed: {e}", severity="error")
         finally:
-            self.is_running = False
+            self.demo_running = False
             if self.orchestrator:
                 await self.orchestrator.shutdown()
 
@@ -393,7 +582,7 @@ class TheatricalMonitoringApp(App):
             "deployment": 4
         }
 
-        while self.is_running:
+        while self.demo_running:
             try:
                 # Check for new events
                 current_event_count = len(self.orchestrator.events)
@@ -440,17 +629,38 @@ class TheatricalMonitoringApp(App):
 
         widget = self.agent_widgets[agent_id]
 
-        # Map event types to status updates
+        # Map event types to status updates - always update with event message for debugging
         if event.event_type == "THINKING":
-            widget.update_status("thinking", progress=25, task="Analyzing...")
+            widget.update_status("thinking", progress=25, task=event.message)
         elif event.event_type == "TASK":
-            widget.update_status("working", progress=50, task=event.message[:30])
+            widget.update_status("working", progress=50, task=event.message)
         elif event.event_type == "SUCCESS":
-            widget.update_status("success", progress=100, task="Completed!")
+            widget.update_status("success", progress=100, task=event.message)  # Show actual message
         elif event.event_type == "ERROR":
-            widget.update_status("error", progress=0, task="Failed")
+            widget.update_status("error", progress=0, task=event.message)  # Show actual message
         elif event.event_type == "PHASE":
-            widget.update_status("active", progress=10, task=event.message[:30])
+            widget.update_status("active", progress=10, task=event.message)
+        elif event.event_type == "INIT":
+            widget.update_status("initializing", progress=15, task=event.message)
+        elif event.event_type == "SYSTEM":
+            # Show system messages for orchestrator
+            if agent_id == "orchestrator":
+                # Update all agents to show system status
+                for w in self.agent_widgets.values():
+                    w.update_status("ready", progress=5, task=f"System: {event.message}")
+        elif event.event_type == "DETAILS":
+            # Extract cost and time from details event
+            if "Cost:" in event.message and "$" in event.message:
+                try:
+                    cost_str = event.message.split("$")[1].split()[0]
+                    cost = float(cost_str)
+                    widget.update_metrics(cost=cost)
+                except:
+                    pass
+            # Extract tokens if available
+            if event.details and "tokens" in event.details:
+                widget.update_metrics(tokens=event.details["tokens"])
+        
 
     def action_start_demo(self) -> None:
         """Action for start demo keybind."""

@@ -8,24 +8,30 @@ process in real-time.
 
 import asyncio
 import logging
+import os
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
+
 from agents.base.enhanced_agent import EnhancedBaseAgent, EnhancedTask
 from agents.base.types import TaskType
-from agents.specialists.backend_agent import create_backend_agent
-from agents.specialists.cto_agent import create_cto_agent
-from agents.specialists.devops_agent import create_devops_agent
-from agents.specialists.frontend_agent import create_frontend_agent
-from agents.specialists.qa_agent import create_qa_agent
-from core.routing.router import LLMRouter
+from core.routing.router import LLMRouter, RoutingPolicy, RoutingStrategy
+from core.routing.providers.claude import ClaudeProvider, ClaudeConfig
+from core.routing.providers.openai import OpenAIProvider, OpenAIConfig
+from enhanced_mock_provider import EnhancedMockProvider
+from core.routing.providers.mock_provider import MockConfig
 
-# Configure logging for theatrical display
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Load environment variables
+load_dotenv()
+
+# Configure logging for theatrical display only when run directly
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
 logger = logging.getLogger(__name__)
 
 
@@ -77,9 +83,19 @@ class TheatricalOrchestrator:
         self._log_event("SYSTEM", "orchestrator", "🎭 Initializing Theatrical Orchestrator...")
         await self._pause()
 
-        # Initialize LLM router
+        # Initialize LLM router with cost-optimized strategy
         self._log_event("SYSTEM", "orchestrator", "🔧 Setting up LLM routing...")
-        self.router = LLMRouter()
+        self.router = LLMRouter(
+            default_policy=RoutingPolicy(
+                strategy=RoutingStrategy.COST_OPTIMIZED,
+                max_cost_per_request=0.50,
+            )
+        )
+        
+        # Configure LLM providers
+        await self._setup_providers()
+        
+        # Initialize router after providers are registered
         await self.router.initialize()
         await self._pause()
 
@@ -91,19 +107,38 @@ class TheatricalOrchestrator:
 
     async def _create_agents(self) -> None:
         """Create and initialize all specialist agents."""
+        from agents.specialists.cto_agent import CTOAgent, CTOAgentConfig
+        from agents.specialists.backend_agent import BackendDeveloperAgent, BackendAgentConfig
+        from agents.specialists.frontend_agent import FrontendDeveloperAgent, FrontendAgentConfig
+        from agents.specialists.qa_agent import QAEngineerAgent, QAAgentConfig
+        from agents.specialists.devops_agent import DevOpsEngineerAgent, DevOpsAgentConfig
+        
         agent_configs = [
-            ("cto-001", "🏛️ CTO Agent", create_cto_agent),
-            ("backend-001", "⚙️ Backend Developer", create_backend_agent),
-            ("frontend-001", "🎨 Frontend Developer", create_frontend_agent),
-            ("qa-001", "🧪 QA Engineer", create_qa_agent),
-            ("devops-001", "🚀 DevOps Engineer", create_devops_agent)
+            ("cto-001", "🏛️ CTO Agent", CTOAgent, CTOAgentConfig),
+            ("backend-001", "⚙️ Backend Developer", BackendDeveloperAgent, BackendAgentConfig),
+            ("frontend-001", "🎨 Frontend Developer", FrontendDeveloperAgent, FrontendAgentConfig),
+            ("qa-001", "🧪 QA Engineer", QAEngineerAgent, QAAgentConfig),
+            ("devops-001", "🚀 DevOps Engineer", DevOpsEngineerAgent, DevOpsAgentConfig)
         ]
 
-        for agent_id, display_name, create_func in agent_configs:
+        for agent_id, display_name, agent_class, config_class in agent_configs:
             self._log_event("INIT", agent_id, f"Creating {display_name}...")
-            agent = await create_func()
+            
+            # Create agent configuration
+            config = config_class()
+            
+            # Create agent instance WITHOUT initializing
+            agent = agent_class(config)
+            
+            # CRITICAL: Assign router BEFORE initialization
             agent.router = self.router
+            
+            # Now initialize the agent with router already set
+            await agent.initialize()
+            
+            # Store the agent
             self.agents[agent_id] = agent
+            
             await self._pause(1.0)  # Shorter pause for agent creation
 
     async def orchestrate_project(self, project_description: str) -> None:
@@ -150,7 +185,7 @@ class TheatricalOrchestrator:
 
         # Create architecture task
         task = EnhancedTask(
-            task_type=TaskType.ARCHITECTURE_DESIGN,
+            task_type=TaskType.SYSTEM_DESIGN,
             prompt=f"""
             As the CTO, analyze this project and create a comprehensive technical specification:
 
@@ -250,7 +285,7 @@ class TheatricalOrchestrator:
         await self._pause()
 
         task = EnhancedTask(
-            task_type=TaskType.UI_DEVELOPMENT,
+            task_type=TaskType.CODE_GENERATION,
             prompt="""
             Create a modern, responsive frontend application with:
 
@@ -464,6 +499,61 @@ class TheatricalOrchestrator:
                 self._log_event("ERROR", agent_id, f"❌ Shutdown error: {e}")
 
         self._log_event("SYSTEM", "orchestrator", "🎭 Theatrical Orchestrator shutdown complete")
+
+    async def _setup_providers(self) -> None:
+        """Setup LLM providers based on available API keys."""
+        providers_configured = 0
+        
+        # Try to setup Claude provider
+        claude_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if claude_api_key:
+            self._log_event("SYSTEM", "orchestrator", "🤖 Configuring Claude provider...")
+            claude_config = ClaudeConfig(
+                provider_name="claude",
+                api_key=claude_api_key,
+                timeout=60.0,
+            )
+            claude_provider = ClaudeProvider(claude_config)
+            await claude_provider.initialize()
+            self.router.register_provider("claude", claude_provider)
+            providers_configured += 1
+            await self._pause(1.0)
+        
+        # Try to setup OpenAI provider
+        openai_api_key = os.getenv("OPENAI_API_KEY")
+        if openai_api_key:
+            self._log_event("SYSTEM", "orchestrator", "🤖 Configuring OpenAI provider...")
+            openai_config = OpenAIConfig(
+                provider_name="openai",
+                api_key=openai_api_key,
+                timeout=60.0,
+            )
+            openai_provider = OpenAIProvider(openai_config)
+            await openai_provider.initialize()
+            self.router.register_provider("openai", openai_provider)
+            providers_configured += 1
+            await self._pause(1.0)
+        
+        # If no real providers available, use enhanced mock provider
+        if providers_configured == 0:
+            self._log_event("SYSTEM", "orchestrator", "🎭 No API keys found, using mock provider...")
+            mock_config = MockConfig(
+                provider_name="enhanced_mock",
+                models=[
+                    {"id": "mock-cto-model", "context_window": 16384},
+                    {"id": "mock-backend-model", "context_window": 16384},
+                    {"id": "mock-frontend-model", "context_window": 16384},
+                    {"id": "mock-qa-model", "context_window": 16384},
+                    {"id": "mock-devops-model", "context_window": 16384},
+                ],
+                default_model_id="mock-cto-model",
+            )
+            mock_provider = EnhancedMockProvider(mock_config)
+            await mock_provider.initialize()
+            self.router.register_provider("enhanced_mock", mock_provider)
+            await self._pause(1.0)
+        else:
+            self._log_event("SYSTEM", "orchestrator", f"✅ Configured {providers_configured} real LLM provider(s)")
 
 
 # Demo function

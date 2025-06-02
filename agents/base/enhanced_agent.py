@@ -216,9 +216,8 @@ class EnhancedBaseAgent(ABC):
             # Initialize memory manager
             await self.memory.initialize()
 
-            # Initialize router (if it has initialize method)
-            if hasattr(self.router, 'initialize'):
-                await self.router.initialize()
+            # Skip router initialization - it should be initialized externally
+            # when sharing routers across agents
 
             # Start health monitoring (if it has this method)
             if hasattr(self.health, 'start_monitoring'):
