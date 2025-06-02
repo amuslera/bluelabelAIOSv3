@@ -8,7 +8,7 @@ for optimal task assignment and agent collaboration.
 import logging
 import random
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from agents.base.types import (
     AgentState,
@@ -32,7 +32,7 @@ class AgentDiscovery:
     - Geographic and resource-based routing
     """
 
-    def __init__(self, registry: AgentRegistry | None = None):
+    def __init__(self, registry: Optional[AgentRegistry] = None):
         """Initialize the discovery service."""
         self.registry = registry
 
@@ -47,7 +47,7 @@ class AgentDiscovery:
         task_type: TaskType,
         complexity: int = 5,
         privacy_required: bool = False,
-        preferred_agent_type: AgentType | None = None,
+        preferred_agent_type: Optional[AgentType] = None,
         exclude_agents: list[str] | None = None,
     ) -> str | None:
         """
@@ -269,7 +269,7 @@ class AgentDiscovery:
     async def _get_candidate_agents(
         self,
         task_type: TaskType,
-        preferred_agent_type: AgentType | None = None,
+        preferred_agent_type: Optional[AgentType] = None,
         exclude_agents: list[str] | None = None,
     ) -> list[str]:
         """Get candidate agents that can potentially handle the task."""
@@ -472,7 +472,7 @@ class AgentDiscovery:
 
 
 # Global discovery instance
-agent_discovery: AgentDiscovery | None = None
+agent_discovery: Optional[AgentDiscovery] = None
 
 
 async def get_agent_discovery() -> AgentDiscovery:
@@ -486,7 +486,7 @@ async def get_agent_discovery() -> AgentDiscovery:
     return agent_discovery
 
 
-async def initialize_agent_discovery(registry: AgentRegistry | None = None) -> AgentDiscovery:
+async def initialize_agent_discovery(registry: Optional[AgentRegistry] = None) -> AgentDiscovery:
     """Initialize the global agent discovery instance."""
     global agent_discovery
 

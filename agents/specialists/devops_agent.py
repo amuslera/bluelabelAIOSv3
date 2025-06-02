@@ -13,7 +13,7 @@ This agent focuses on:
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -66,7 +66,7 @@ class DevOpsEngineerAgent(EnhancedBaseAgent):
     - Disaster recovery and backup strategies
     """
 
-    def __init__(self, config: DevOpsAgentConfig | None = None):
+    def __init__(self, config: Optional[DevOpsAgentConfig] = None):
         """Initialize DevOps Engineer Agent with specialized configuration."""
         if config is None:
             config = DevOpsAgentConfig()
@@ -1127,7 +1127,7 @@ groups:
 
 
 # Factory function for easy DevOps Agent creation
-async def create_devops_agent(custom_config: dict[str, Any] | None = None) -> DevOpsEngineerAgent:
+async def create_devops_agent(custom_config: Optional[Dict[str, Any]] = None) -> DevOpsEngineerAgent:
     """Create and initialize a DevOps Engineer Agent with optional custom configuration."""
 
     config_params = custom_config or {}

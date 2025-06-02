@@ -8,7 +8,7 @@ to maintain relevant history within model context windows.
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 

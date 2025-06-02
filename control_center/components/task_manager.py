@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from textual import on
 from textual.app import ComposeResult
@@ -39,7 +40,7 @@ class Task:
     title: str
     description: str
     status: TaskStatus
-    assigned_to: str | None = None
+    assigned_to: Optional[str] = None
     priority: str = "medium"
 
     def get_status_display(self) -> str:

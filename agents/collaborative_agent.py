@@ -11,7 +11,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 import websockets
 
@@ -98,7 +98,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
     - Execute tasks using Enhanced BaseAgent framework
     """
 
-    def __init__(self, config: CollaborativeAgentConfig, llm_router: LLMRouter | None = None):
+    def __init__(self, config: CollaborativeAgentConfig, llm_router: Optional[LLMRouter] = None):
         super().__init__(config)
 
         self.collab_config = config
@@ -106,7 +106,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
         self.collaboration_server = config.collaboration_server
 
         # Collaboration state
-        self.websocket: websockets.Optional[WebSocketServerProtocol] = None
+        self.websocket: Optional[websockets.WebSocketServerProtocol] = None
         self.connected = False
         self.collaborators: dict[str, Any] = {}
         self.assigned_tasks: list[dict[str, Any]] = []
@@ -489,21 +489,21 @@ Provide expert guidance based on your role and expertise.""")
 
 
 # Factory functions for easy agent creation
-async def create_collaborative_cto_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
+async def create_collaborative_cto_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
     """Create CTO collaborative agent."""
     config = CollaborativeAgentConfig(role="cto", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)
     await agent.initialize()
     return agent
 
-async def create_collaborative_backend_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
+async def create_collaborative_backend_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
     """Create Backend Developer collaborative agent."""
     config = CollaborativeAgentConfig(role="backend-dev", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)
     await agent.initialize()
     return agent
 
-async def create_collaborative_qa_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
+async def create_collaborative_qa_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
     """Create QA Engineer collaborative agent."""
     config = CollaborativeAgentConfig(role="qa", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)

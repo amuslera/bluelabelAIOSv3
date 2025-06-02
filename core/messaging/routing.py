@@ -8,7 +8,7 @@ efficient agent-to-agent communication.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 import yaml
 
@@ -46,7 +46,7 @@ class ExchangeConfig:
     type: str  # direct, topic, fanout, headers
     durable: bool = True
     auto_delete: bool = False
-    arguments: dict[str, Any] | None = None
+    arguments: Optional[dict[str, Any]] = None
 
 
 @dataclass
@@ -57,10 +57,10 @@ class QueueConfig:
     durable: bool = True
     exclusive: bool = False
     auto_delete: bool = False
-    max_length: int | None = None
-    message_ttl: int | None = None
-    dead_letter_exchange: str | None = None
-    dead_letter_routing_key: str | None = None
+    max_length: Optional[int] = None
+    message_ttl: Optional[int] = None
+    dead_letter_exchange: Optional[str] = None
+    dead_letter_routing_key: Optional[str] = None
 
 
 @dataclass
@@ -86,7 +86,7 @@ class MessageRoutingConfig:
     - Message patterns
     """
 
-    def __init__(self, config_path: str | None = None):
+    def __init__(self, config_path: Optional[str] = None):
         """Initialize routing configuration."""
         self.exchanges: dict[str, ExchangeConfig] = {}
         self.routing_rules: dict[str, RoutingRule] = {}
@@ -261,7 +261,7 @@ class MessageRoutingConfig:
                 f"Missing parameter {e} for queue pattern {config.name_pattern}"
             )
 
-    def find_routing_rule(self, routing_key: str) -> RoutingRule | None:
+    def find_routing_rule(self, routing_key: str) -> Optional[RoutingRule]:
         """Find the best matching routing rule for a routing key."""
         # For now, simple exact match - could be enhanced with pattern matching
         for _rule_name, rule in self.routing_rules.items():
@@ -311,11 +311,11 @@ class MessageRoutingConfig:
 
         return routing_keys
 
-    def get_exchange_config(self, exchange_name: str) -> ExchangeConfig | None:
+    def get_exchange_config(self, exchange_name: str) -> Optional[ExchangeConfig]:
         """Get configuration for an exchange."""
         return self.exchanges.get(exchange_name)
 
-    def get_routing_rule(self, rule_name: str) -> RoutingRule | None:
+    def get_routing_rule(self, rule_name: str) -> Optional[RoutingRule]:
         """Get a specific routing rule."""
         return self.routing_rules.get(rule_name)
 

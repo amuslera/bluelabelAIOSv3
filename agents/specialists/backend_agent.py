@@ -11,7 +11,7 @@ This agent focuses on:
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -62,7 +62,7 @@ class BackendDeveloperAgent(EnhancedBaseAgent):
     - Error handling and validation
     """
 
-    def __init__(self, config: BackendAgentConfig | None = None):
+    def __init__(self, config: Optional[BackendAgentConfig] = None):
         """Initialize Backend Developer Agent with specialized configuration."""
         if config is None:
             config = BackendAgentConfig()
@@ -608,7 +608,7 @@ class ServiceName:
 
 
 # Factory function for easy Backend Agent creation
-async def create_backend_agent(custom_config: dict[str, Any] | None = None) -> BackendDeveloperAgent:
+async def create_backend_agent(custom_config: Optional[Dict[str, Any]] = None) -> BackendDeveloperAgent:
     """Create and initialize a Backend Developer Agent with optional custom configuration."""
 
     config_params = custom_config or {}

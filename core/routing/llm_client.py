@@ -6,6 +6,7 @@ Supports Anthropic Claude, OpenAI, and local Ollama models.
 import logging
 import os
 from abc import ABC, abstractmethod
+from typing import Dict, Optional
 
 import httpx
 from pydantic import BaseModel

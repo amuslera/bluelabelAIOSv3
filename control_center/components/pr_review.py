@@ -85,7 +85,7 @@ class DiffViewerDialog(ModalScreen):
 class PRReviewPanel(Widget):
     """Panel for reviewing pull requests."""
 
-    current_pr: reactive[PullRequest | None] = reactive(None)
+    current_pr: reactive[Optional[PullRequest]] = reactive(None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

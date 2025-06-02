@@ -210,9 +210,9 @@ def main():
     """Main entry point."""
     # Check for required dependencies
     try:
-        import aiohttp
-        import textual
-        import websockets
+        import aiohttp  # noqa: F401
+        import textual  # noqa: F401
+        import websockets  # noqa: F401
     except ImportError as e:
         print(f"Missing dependency: {e}")
         print("Install with: pip install textual aiohttp websockets")

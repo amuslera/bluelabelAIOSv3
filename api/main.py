@@ -6,7 +6,7 @@ Provides REST API endpoints for interacting with agents.
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Optional
 
 import uvicorn
 from dotenv import load_dotenv
@@ -99,8 +99,8 @@ class TaskResponse(BaseModel):
     task_id: str
     agent_id: str
     status: str
-    result: dict[str, Any] | None = None
-    error: str | None = None
+    result: Optional[dict[str, Any]] = None
+    error: Optional[str] = None
     execution_time: float
     model_used: str
     cost_estimate: float

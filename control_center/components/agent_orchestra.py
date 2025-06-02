@@ -4,6 +4,7 @@ Agent Orchestra Panel - Shows all active agents and their status
 
 import asyncio
 import time
+from typing import Optional
 
 import redis.asyncio as redis
 from redis.exceptions import RedisError
@@ -47,8 +48,8 @@ class AgentOrchestraPanel(Widget):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.redis_client: redis.Redis | None = None
-        self.refresh_timer: Timer | None = None
+        self.redis_client: Optional[redis.Redis] = None
+        self.refresh_timer: Optional[Timer] = None
 
     def compose(self) -> ComposeResult:
         """Create the panel layout."""

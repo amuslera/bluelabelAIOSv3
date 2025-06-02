@@ -12,7 +12,7 @@ This agent focuses on:
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -64,7 +64,7 @@ class FrontendDeveloperAgent(EnhancedBaseAgent):
     - Responsive design and accessibility (WCAG)
     """
 
-    def __init__(self, config: FrontendAgentConfig | None = None):
+    def __init__(self, config: Optional[FrontendAgentConfig] = None):
         """Initialize Frontend Developer Agent with specialized configuration."""
         if config is None:
             config = FrontendAgentConfig()
@@ -630,7 +630,7 @@ export const apiService = {
 
 
 # Factory function for easy Frontend Agent creation
-async def create_frontend_agent(custom_config: dict[str, Any] | None = None) -> FrontendDeveloperAgent:
+async def create_frontend_agent(custom_config: Optional[Dict[str, Any]] = None) -> FrontendDeveloperAgent:
     """Create and initialize a Frontend Developer Agent with optional custom configuration."""
 
     config_params = custom_config or {}

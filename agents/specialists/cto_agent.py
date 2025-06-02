@@ -11,7 +11,7 @@ This agent leverages the Enhanced BaseAgent framework to provide:
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -61,7 +61,7 @@ class CTOAgent(EnhancedBaseAgent):
     - Risk assessment and mitigation strategies
     """
 
-    def __init__(self, config: CTOAgentConfig | None = None):
+    def __init__(self, config: Optional[CTOAgentConfig] = None):
         """Initialize CTO Agent with specialized configuration."""
         if config is None:
             config = CTOAgentConfig()
@@ -410,7 +410,7 @@ Please provide your analysis and recommendations as the CTO."""
 
 
 # Factory function for easy CTO Agent creation
-async def create_cto_agent(custom_config: dict[str, Any] | None = None) -> CTOAgent:
+async def create_cto_agent(custom_config: Optional[Dict[str, Any]] = None) -> CTOAgent:
     """Create and initialize a CTO Agent with optional custom configuration."""
 
     config_params = custom_config or {}

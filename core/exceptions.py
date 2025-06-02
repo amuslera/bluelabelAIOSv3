@@ -7,7 +7,7 @@ Provides consistent error handling patterns, logging, and recovery mechanisms.
 import logging
 import traceback
 from enum import Enum
-from typing import Any
+from typing import Any, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -42,14 +42,14 @@ class ErrorCategory(Enum):
 class ErrorContext(BaseModel):
     """Context information for errors."""
 
-    agent_id: str | None = None
-    task_id: str | None = None
-    conversation_id: str | None = None
-    request_id: str | None = None
-    user_id: str | None = None
-    provider_name: str | None = None
-    model_id: str | None = None
-    timestamp: str | None = None
+    agent_id: Optional[str] = None
+    task_id: Optional[str] = None
+    conversation_id: Optional[str] = None
+    request_id: Optional[str] = None
+    user_id: Optional[str] = None
+    provider_name: Optional[str] = None
+    model_id: Optional[str] = None
+    timestamp: Optional[str] = None
     additional_data: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -59,13 +59,13 @@ class AIOSError(Exception):
     def __init__(
         self,
         message: str,
-        error_code: str | None = None,
+        error_code: Optional[str] = None,
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: ErrorContext | None = None,
-        cause: Exception | None = None,
+        context: Optional[ErrorContext] = None,
+        cause: Optional[Exception] = None,
         recoverable: bool = True,
-        retry_after: float | None = None,
+        retry_after: Optional[float] = None,
     ):
         super().__init__(message)
         self.message = message
@@ -344,16 +344,16 @@ class BusinessLogicError(AIOSError):
 class ErrorHandler:
     """Centralized error handling and logging."""
 
-    def __init__(self, logger: logging.Logger | None = None):
+    def __init__(self, logger: Optional[logging.Logger] = None):
         self.logger = logger or logging.getLogger(__name__)
         self.error_counts: dict[str, int] = {}
 
     def handle_error(
         self,
-        error: Exception | AIOSError,
-        context: ErrorContext | None = None,
+        error: Union[Exception, AIOSError],
+        context: Optional[ErrorContext] = None,
         reraise: bool = True,
-    ) -> AIOSError | None:
+    ) -> Optional[AIOSError]:
         """Handle an error with logging and optional re-raising."""
 
         # Convert to AIOSError if needed
@@ -416,10 +416,10 @@ global_error_handler = ErrorHandler()
 
 
 def handle_error(
-    error: Exception | AIOSError,
-    context: ErrorContext | None = None,
+    error: Union[Exception, AIOSError],
+    context: Optional[ErrorContext] = None,
     reraise: bool = True,
-) -> AIOSError | None:
+) -> Optional[AIOSError]:
     """Handle an error using the global error handler."""
     return global_error_handler.handle_error(error, context, reraise)
 
@@ -492,7 +492,7 @@ class CircuitBreaker:
         self.expected_exception = expected_exception
 
         self.failure_count = 0
-        self.last_failure_time: float | None = None
+        self.last_failure_time: Optional[float] = None
         self.state = "closed"  # closed, open, half-open
 
     def call(self, func, *args, **kwargs):

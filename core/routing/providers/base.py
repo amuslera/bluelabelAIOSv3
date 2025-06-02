@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -57,51 +57,51 @@ class ModelInfo(BaseModel):
     provider: str
     model_type: ModelType
     size: ModelSize
-    capabilities: list[ModelCapability]
+    capabilities: List[ModelCapability]
     context_length: int
     input_cost_per_token: float = 0.0  # Cost per input token in USD
     output_cost_per_token: float = 0.0  # Cost per output token in USD
-    max_requests_per_minute: int | None = None
+    max_requests_per_minute: Optional[int] = None
     supports_streaming: bool = True
     supports_functions: bool = False
     privacy_level: str = "cloud"  # "local", "cloud", "hybrid"
     performance_tier: int = 1  # 1-5, higher is better
     availability: float = 0.99  # Availability SLA
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ProviderConfig(BaseModel):
     """Configuration for an LLM provider."""
 
     provider_name: str
-    api_key: str | None = None
-    api_base: str | None = None
+    api_key: Optional[str] = None
+    api_base: Optional[str] = None
     timeout: float = 30.0
     max_retries: int = 3
-    rate_limit_requests_per_minute: int | None = None
-    rate_limit_tokens_per_minute: int | None = None
-    custom_headers: dict[str, str] = Field(default_factory=dict)
-    proxy_url: str | None = None
+    rate_limit_requests_per_minute: Optional[int] = None
+    rate_limit_tokens_per_minute: Optional[int] = None
+    custom_headers: Dict[str, str] = Field(default_factory=dict)
+    proxy_url: Optional[str] = None
     verify_ssl: bool = True
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LLMRequest(BaseModel):
     """Request to an LLM provider."""
 
-    messages: list[dict[str, str]]
+    messages: List[Dict[str, str]]
     model_id: str
-    max_tokens: int | None = None
+    max_tokens: Optional[int] = None
     temperature: float = 0.7
-    top_p: float | None = None
-    frequency_penalty: float | None = None
-    presence_penalty: float | None = None
-    stop_sequences: list[str] | None = None
+    top_p: Optional[float] = None
+    frequency_penalty: Optional[float] = None
+    presence_penalty: Optional[float] = None
+    stop_sequences: Optional[List[str]] = None
     stream: bool = False
-    functions: list[dict[str, Any]] | None = None
-    function_call: str | dict | None = None
-    user_id: str | None = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    functions: Optional[List[Dict[str, Any]]] = None
+    function_call: Optional[Union[str, Dict]] = None
+    user_id: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LLMResponse(BaseModel):
@@ -127,16 +127,16 @@ class LLMResponse(BaseModel):
     processing_time_ms: float = 0.0
 
     # Metadata
-    finish_reason: str | None = None
-    function_call: dict[str, Any] | None = None
+    finish_reason: Optional[str] = None
+    function_call: Optional[Dict[str, Any]] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    request_id: str | None = None
+    request_id: Optional[str] = None
 
     # Quality metrics
-    confidence_score: float | None = None
-    safety_score: float | None = None
+    confidence_score: Optional[float] = None
+    safety_score: Optional[float] = None
 
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ProviderHealthStatus(BaseModel):
@@ -147,11 +147,11 @@ class ProviderHealthStatus(BaseModel):
     last_check: datetime = Field(default_factory=datetime.utcnow)
     response_time_ms: float = 0.0
     error_rate: float = 0.0
-    rate_limit_remaining: int | None = None
-    rate_limit_reset_time: datetime | None = None
-    available_models: list[str] = Field(default_factory=list)
+    rate_limit_remaining: Optional[int] = None
+    rate_limit_reset_time: Optional[datetime] = None
+    available_models: List[str] = Field(default_factory=list)
     status_message: str = ""
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LLMProvider(ABC):
@@ -166,8 +166,8 @@ class LLMProvider(ABC):
         """Initialize the provider with configuration."""
         self.config = config
         self.provider_name = config.provider_name
-        self._models: dict[str, ModelInfo] = {}
-        self._last_health_check: datetime | None = None
+        self._models: Dict[str, ModelInfo] = {}
+        self._last_health_check: Optional[datetime] = None
         self._health_status = ProviderHealthStatus(provider_name=self.provider_name)
 
     @property
@@ -181,7 +181,7 @@ class LLMProvider(ABC):
         return self._health_status.is_healthy
 
     @property
-    def available_models(self) -> list[ModelInfo]:
+    def available_models(self) -> List[ModelInfo]:
         """Get list of available models."""
         return list(self._models.values())
 
@@ -201,7 +201,7 @@ class LLMProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_models(self) -> list[ModelInfo]:
+    async def get_models(self) -> List[ModelInfo]:
         """Get list of available models from the provider."""
         pass
 
@@ -214,7 +214,7 @@ class LLMProvider(ABC):
         """Shutdown the provider and cleanup resources."""
         pass
 
-    def get_model_info(self, model_id: str) -> ModelInfo | None:
+    def get_model_info(self, model_id: str) -> Optional[ModelInfo]:
         """Get information about a specific model."""
         return self._models.get(model_id)
 

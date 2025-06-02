@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 
 from core.messaging.queue import AgentMessage, MessageHandler, MessageQueue
 
@@ -53,7 +53,7 @@ class ErrorInfo:
     retry_count: int = 0
     max_retries: int = 3
     retry_strategy: RetryStrategy = RetryStrategy.EXPONENTIAL
-    stack_trace: str | None = None
+    stack_trace: Optional[str] = None
 
 
 @dataclass
@@ -66,8 +66,8 @@ class RetryPolicy:
     max_delay: float = 300.0  # 5 minutes
     backoff_factor: float = 2.0
     jitter: bool = True
-    retry_on: list[ErrorType] | None = None  # None means retry on all errors
-    no_retry_on: list[ErrorType] | None = None
+    retry_on: Optional[list[ErrorType]] = None  # None means retry on all errors
+    no_retry_on: Optional[list[ErrorType]] = None
 
 
 class ErrorHandler:
@@ -78,7 +78,7 @@ class ErrorHandler:
     def __init__(
         self,
         message_queue: MessageQueue,
-        default_retry_policy: RetryPolicy | None = None,
+        default_retry_policy: Optional[RetryPolicy] = None,
     ):
         """Initialize error handler."""
         self.message_queue = message_queue
@@ -91,7 +91,7 @@ class ErrorHandler:
         error: Exception,
         message: AgentMessage,
         agent_id: str,
-        retry_policy: RetryPolicy | None = None,
+        retry_policy: Optional[RetryPolicy] = None,
     ) -> bool:
         """
         Handle an error that occurred during message processing.
@@ -443,7 +443,7 @@ class DLQMessageHandler(MessageHandler):
     def __init__(self, dlq_processor: DeadLetterQueueProcessor):
         self.dlq_processor = dlq_processor
 
-    async def handle_message(self, message: AgentMessage) -> AgentMessage | None:
+    async def handle_message(self, message: AgentMessage) -> Optional[AgentMessage]:
         """Handle messages sent to the DLQ."""
         if message.envelope.get("message_type") == "dlq_entry":
             await self.dlq_processor.process_dlq_message(message.payload)
@@ -453,8 +453,8 @@ class DLQMessageHandler(MessageHandler):
 
 
 # Global error handler instance
-error_handler: ErrorHandler | None = None
-dlq_processor: DeadLetterQueueProcessor | None = None
+error_handler: Optional[ErrorHandler] = None
+dlq_processor: Optional[DeadLetterQueueProcessor] = None
 
 
 def initialize_error_handling(message_queue: MessageQueue) -> None:

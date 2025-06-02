@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Optional
 
 import redis.asyncio as redis
 
@@ -54,10 +54,10 @@ class AgentRegistry:
         self.stale_agent_timeout = stale_agent_timeout
 
         # Redis connection
-        self.redis: redis.Optional[Redis] = None
+        self.redis: Optional[redis.Redis] = None
 
         # Background tasks
-        self._cleanup_task: asyncio.Optional[Task] = None
+        self._cleanup_task: Optional[asyncio.Task] = None
         self._shutdown_event = asyncio.Event()
 
         # Metrics
@@ -351,8 +351,8 @@ class AgentRegistry:
 
     async def list_agents(
         self,
-        agent_type: AgentType | None = None,
-        state: AgentState | None = None,
+        agent_type: Optional[AgentType] = None,
+        state: Optional[AgentState] = None,
         healthy_only: bool = False,
     ) -> list[str]:
         """List all registered agents with optional filtering."""
@@ -555,7 +555,7 @@ class AgentRegistry:
 
 
 # Global registry instance
-agent_registry: AgentRegistry | None = None
+agent_registry: Optional[AgentRegistry] = None
 
 
 async def get_agent_registry() -> AgentRegistry:

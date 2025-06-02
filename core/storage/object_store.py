@@ -14,7 +14,7 @@ import os
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Optional, Union
 from urllib.parse import urlparse
 
 from minio import Minio
@@ -33,9 +33,9 @@ class StorageMetadata:
     last_modified: datetime
     etag: str
     content_type: str
-    version_id: str | None = None
-    tags: dict[str, str] | None = None
-    user_metadata: dict[str, str] | None = None
+    version_id: Optional[str] = None
+    tags: Optional[dict[str, str]] = None
+    user_metadata: Optional[dict[str, str]] = None
 
 
 @dataclass
@@ -45,8 +45,8 @@ class UploadProgress:
     bytes_uploaded: int
     total_bytes: int
     percentage: float
-    upload_speed: float | None = None  # bytes per second
-    eta: float | None = None  # estimated time remaining in seconds
+    upload_speed: Optional[float] = None  # bytes per second
+    eta: Optional[float] = None  # estimated time remaining in seconds
 
 
 class ObjectStorage:
@@ -63,9 +63,9 @@ class ObjectStorage:
 
     def __init__(
         self,
-        endpoint: str | None = None,
-        access_key: str | None = None,
-        secret_key: str | None = None,
+        endpoint: Optional[str] = None,
+        access_key: Optional[str] = None,
+        secret_key: Optional[str] = None,
         secure: bool = False,
     ):
         """
@@ -160,11 +160,11 @@ class ObjectStorage:
         self,
         bucket_name: str,
         object_key: str,
-        file_path: str | Path,
-        content_type: str | None = None,
-        metadata: dict[str, str] | None = None,
-        tags: dict[str, str] | None = None,
-        progress_callback: callable | None = None,
+        file_path: Union[str, Path],
+        content_type: Optional[str] = None,
+        metadata: Optional[dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
+        progress_callback: Optional[callable] = None,
     ) -> StorageMetadata:
         """
         Upload a file to object storage.
@@ -256,10 +256,10 @@ class ObjectStorage:
         self,
         bucket_name: str,
         object_key: str,
-        data: bytes | str | BinaryIO,
+        data: Union[bytes, str, BinaryIO],
         content_type: str = "application/octet-stream",
-        metadata: dict[str, str] | None = None,
-        tags: dict[str, str] | None = None,
+        metadata: Optional[dict[str, str]] = None,
+        tags: Optional[dict[str, str]] = None,
     ) -> StorageMetadata:
         """
         Upload data directly to object storage.
@@ -332,8 +332,8 @@ class ObjectStorage:
         self,
         bucket_name: str,
         object_key: str,
-        file_path: str | Path,
-        version_id: str | None = None,
+        file_path: Union[str, Path],
+        version_id: Optional[str] = None,
     ) -> Path:
         """
         Download a file from object storage.
@@ -374,7 +374,7 @@ class ObjectStorage:
         bucket_name: str,
         object_key: str,
         file_path: str,
-        version_id: str | None = None,
+        version_id: Optional[str] = None,
     ):
         """Synchronous file download wrapper."""
         if version_id:
@@ -395,7 +395,7 @@ class ObjectStorage:
         self,
         bucket_name: str,
         object_key: str,
-        version_id: str | None = None,
+        version_id: Optional[str] = None,
     ) -> bytes:
         """
         Download object data as bytes.
@@ -438,7 +438,7 @@ class ObjectStorage:
             raise
 
     async def get_object_metadata(
-        self, bucket_name: str, object_key: str, version_id: str | None = None
+        self, bucket_name: str, object_key: str, version_id: Optional[str] = None
     ) -> StorageMetadata:
         """Get metadata for an object."""
         try:
@@ -473,7 +473,7 @@ class ObjectStorage:
             raise
 
     async def delete_object(
-        self, bucket_name: str, object_key: str, version_id: str | None = None
+        self, bucket_name: str, object_key: str, version_id: Optional[str] = None
     ) -> None:
         """Delete an object from storage."""
         try:
@@ -501,7 +501,7 @@ class ObjectStorage:
     async def list_objects(
         self,
         bucket_name: str,
-        prefix: str | None = None,
+        prefix: Optional[str] = None,
         recursive: bool = True,
         include_versions: bool = False,
     ) -> list[StorageMetadata]:
@@ -547,7 +547,7 @@ class ObjectStorage:
         source_key: str,
         dest_bucket: str,
         dest_key: str,
-        metadata: dict[str, str] | None = None,
+        metadata: Optional[dict[str, str]] = None,
     ) -> StorageMetadata:
         """Copy an object within or between buckets."""
         try:
@@ -647,7 +647,7 @@ class ObjectStorage:
 
 
 # Global object storage instance
-object_storage: ObjectStorage | None = None
+object_storage: Optional[ObjectStorage] = None
 
 
 async def initialize_object_storage() -> ObjectStorage:

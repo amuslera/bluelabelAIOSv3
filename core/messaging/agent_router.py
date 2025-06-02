@@ -6,7 +6,7 @@ including broadcast handling, load balancing, and failover routing.
 """
 
 import logging
-from typing import Any
+from typing import Any, Optional
 
 from agents.base.types import AgentType, TaskType
 from core.orchestration.discovery import AgentDiscovery
@@ -47,7 +47,7 @@ class AgentMessageRouter(MessageRouter):
         routing_key: str,
         payload: dict[str, Any],
         sender_id: str,
-        recipient_id: str | None = None,
+        recipient_id: Optional[str] = None,
         message_type: str = "general",
         priority: int = 5,
         **kwargs

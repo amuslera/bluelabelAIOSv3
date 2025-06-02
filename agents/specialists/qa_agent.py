@@ -13,7 +13,7 @@ This agent focuses on:
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -66,7 +66,7 @@ class QAEngineerAgent(EnhancedBaseAgent):
     - Test coverage analysis and reporting
     """
 
-    def __init__(self, config: QAAgentConfig | None = None):
+    def __init__(self, config: Optional[QAAgentConfig] = None):
         """Initialize QA Engineer Agent with specialized configuration."""
         if config is None:
             config = QAAgentConfig()
@@ -701,7 +701,7 @@ class APIPerformanceTest(HttpUser):
 
 
 # Factory function for easy QA Agent creation
-async def create_qa_agent(custom_config: dict[str, Any] | None = None) -> QAEngineerAgent:
+async def create_qa_agent(custom_config: Optional[Dict[str, Any]] = None) -> QAEngineerAgent:
     """Create and initialize a QA Engineer Agent with optional custom configuration."""
 
     config_params = custom_config or {}

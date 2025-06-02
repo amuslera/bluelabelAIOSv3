@@ -11,6 +11,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from fastapi import Response
 from prometheus_client import (

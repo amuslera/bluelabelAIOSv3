@@ -8,7 +8,7 @@ import asyncio
 import logging
 import time
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 import httpx
 
@@ -33,7 +33,7 @@ class OpenAIConfig(ProviderConfig):
     api_version: str = "v1"
     max_tokens_default: int = 4096
     temperature_default: float = 0.7
-    organization_id: str | None = None
+    organization_id: Optional[str] = None
 
 
 class OpenAIProvider(LLMProvider):
@@ -153,11 +153,11 @@ class OpenAIProvider(LLMProvider):
         """Initialize OpenAI provider."""
         super().__init__(config)
         self.config: OpenAIConfig = config
-        self.client: httpx.AsyncClient | None = None
+        self.client: Optional[httpx.AsyncClient] = None
         self.base_url = config.api_base or "https://api.openai.com"
 
         # Rate limiting
-        self._request_timestamps: list[float] = []
+        self._request_timestamps: List[float] = []
         self._request_lock = asyncio.Lock()
 
     async def initialize(self) -> None:
@@ -264,7 +264,7 @@ class OpenAIProvider(LLMProvider):
             logger.error(f"Error in OpenAI streaming: {e}")
             raise
 
-    async def get_models(self) -> list[ModelInfo]:
+    async def get_models(self) -> List[ModelInfo]:
         """Get list of available OpenAI models."""
         return list(self._models.values())
 
@@ -316,7 +316,7 @@ class OpenAIProvider(LLMProvider):
             self.client = None
         logger.info("OpenAI provider shutdown completed")
 
-    def _prepare_request_payload(self, request: LLMRequest) -> dict[str, Any]:
+    def _prepare_request_payload(self, request: LLMRequest) -> Dict[str, Any]:
         """Prepare the request payload for OpenAI API."""
         payload = {
             "model": request.model_id,
@@ -351,7 +351,7 @@ class OpenAIProvider(LLMProvider):
         return payload
 
     def _parse_response(
-        self, request: LLMRequest, response_data: dict[str, Any], start_time: float
+        self, request: LLMRequest, response_data: Dict[str, Any], start_time: float
     ) -> LLMResponse:
         """Parse OpenAI API response into LLMResponse."""
         response_time = (time.time() - start_time) * 1000
