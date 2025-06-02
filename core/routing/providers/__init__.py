@@ -9,15 +9,16 @@ from .base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
-    ModelInfo,
     ModelCapability,
+    ModelInfo,
     ModelSize,
     ModelType,
     ProviderConfig,
     ProviderHealthStatus,
 )
-from .claude import ClaudeProvider, ClaudeConfig
-from .local import LocalProvider, LocalConfig
+from .claude import ClaudeConfig, ClaudeProvider
+from .local import LocalConfig, LocalProvider
+from .openai import OpenAIConfig, OpenAIProvider
 
 __all__ = [
     # Base classes and models
@@ -35,4 +36,6 @@ __all__ = [
     "ClaudeConfig",
     "LocalProvider",
     "LocalConfig",
+    "OpenAIProvider",
+    "OpenAIConfig",
 ]
