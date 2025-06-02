@@ -3,8 +3,8 @@
 Run the AIOSv3 Control Center
 """
 
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add parent directory to path
@@ -18,5 +18,5 @@ if __name__ == "__main__":
         os.environ["MONITORING_URL"] = "ws://localhost:8765"
     if not os.getenv("REDIS_URL"):
         os.environ["REDIS_URL"] = "redis://localhost:6379"
-        
+
     main()

@@ -4,22 +4,20 @@ Local model provider implementation for AIOSv3 platform.
 Provides integration with local LLM services like Ollama, vLLM, and LocalAI.
 """
 
-import asyncio
 import json
 import logging
 import time
-from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from collections.abc import AsyncIterator
+from typing import Any, Dict, List, Optional
 
 import httpx
-from pydantic import BaseModel
 
 from .base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
-    ModelInfo,
     ModelCapability,
+    ModelInfo,
     ModelSize,
     ModelType,
     ProviderConfig,
@@ -54,13 +52,13 @@ class LocalProvider(LLMProvider):
         """Initialize local provider."""
         super().__init__(config)
         self.config: LocalConfig = config
-        self.client: Optional[httpx.AsyncClient] = None
+        self.client: httpx.Optional[AsyncClient] = None
         self.base_url = config.base_url or "http://localhost:11434"
 
         # Provider-specific API paths
         self.api_paths = self._get_api_paths()
 
-    def _get_api_paths(self) -> dict[str, str]:
+    def _get_api_paths(self) -> Dict[str, str]:
         """Get API paths based on provider type."""
         if self.config.provider_type == "ollama":
             return {
@@ -144,7 +142,7 @@ class LocalProvider(LLMProvider):
             logger.error(f"Error in local streaming: {e}")
             raise
 
-    async def get_models(self) -> list[ModelInfo]:
+    async def get_models(self) -> List[ModelInfo]:
         """Get list of available local models."""
         return list(self._models.values())
 
@@ -215,7 +213,7 @@ class LocalProvider(LLMProvider):
             logger.warning(f"Model discovery failed: {e}, loading defaults")
             self._load_default_models()
 
-    async def _parse_ollama_models(self, models_data: dict[str, Any]) -> None:
+    async def _parse_ollama_models(self, models_data: Dict[str, Any]) -> None:
         """Parse Ollama models response."""
         models = models_data.get("models", [])
 
@@ -262,7 +260,7 @@ class LocalProvider(LLMProvider):
             self._models[model_name] = model_info
 
     async def _parse_openai_compatible_models(
-        self, models_data: dict[str, Any]
+        self, models_data: Dict[str, Any]
     ) -> None:
         """Parse OpenAI-compatible models response."""
         models = models_data.get("data", [])
@@ -345,7 +343,7 @@ class LocalProvider(LLMProvider):
 
         self._models.update(default_models)
 
-    def _infer_capabilities_from_name(self, model_name: str) -> list[ModelCapability]:
+    def _infer_capabilities_from_name(self, model_name: str) -> List[ModelCapability]:
         """Infer model capabilities from name."""
         capabilities = [ModelCapability.TEXT_GENERATION]
 

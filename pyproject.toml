@@ -45,6 +45,10 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.7.0",
     "pre-commit>=3.5.0",
+    "bandit[toml]>=1.7.5",
+    "safety>=2.3.0",
+    "detect-secrets>=1.4.0",
+    "pip-audit>=2.6.0",
 ]
 
 [project.scripts]
@@ -160,3 +164,6 @@ exclude_lines = [
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
 skips = ["B101"]  # Skip assert_used check
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "test_*.py"]

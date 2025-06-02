@@ -7,18 +7,17 @@ Provides integration with Anthropic's Claude API for cloud-based LLM services.
 import asyncio
 import logging
 import time
-from datetime import datetime
-from typing import Any, AsyncIterator, Optional
+from collections.abc import AsyncIterator
+from typing import Any, Dict, List, Optional
 
 import httpx
-from pydantic import BaseModel
 
 from .base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
-    ModelInfo,
     ModelCapability,
+    ModelInfo,
     ModelSize,
     ModelType,
     ProviderConfig,
@@ -129,11 +128,11 @@ class ClaudeProvider(LLMProvider):
         """Initialize Claude provider."""
         super().__init__(config)
         self.config: ClaudeConfig = config
-        self.client: Optional[httpx.AsyncClient] = None
+        self.client: httpx.Optional[AsyncClient] = None
         self.base_url = config.api_base or "https://api.anthropic.com"
 
         # Rate limiting
-        self._request_timestamps: list[float] = []
+        self._request_timestamps: List[float] = []
         self._request_lock = asyncio.Lock()
 
     async def initialize(self) -> None:
@@ -241,7 +240,7 @@ class ClaudeProvider(LLMProvider):
             logger.error(f"Error in Claude streaming: {e}")
             raise
 
-    async def get_models(self) -> list[ModelInfo]:
+    async def get_models(self) -> List[ModelInfo]:
         """Get list of available Claude models."""
         return list(self._models.values())
 
@@ -293,7 +292,7 @@ class ClaudeProvider(LLMProvider):
             self.client = None
         logger.info("Claude provider shutdown completed")
 
-    def _prepare_request_payload(self, request: LLMRequest) -> dict[str, Any]:
+    def _prepare_request_payload(self, request: LLMRequest) -> Dict[str, Any]:
         """Prepare the request payload for Claude API."""
         payload = {
             "model": request.model_id,
@@ -316,8 +315,8 @@ class ClaudeProvider(LLMProvider):
         return payload
 
     def _convert_functions_to_tools(
-        self, functions: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
+        self, functions: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Convert OpenAI-style functions to Claude tools format."""
         tools = []
         for func in functions:
@@ -330,7 +329,7 @@ class ClaudeProvider(LLMProvider):
         return tools
 
     def _parse_response(
-        self, request: LLMRequest, response_data: dict[str, Any], start_time: float
+        self, request: LLMRequest, response_data: Dict[str, Any], start_time: float
     ) -> LLMResponse:
         """Parse Claude API response into LLMResponse."""
         response_time = (time.time() - start_time) * 1000

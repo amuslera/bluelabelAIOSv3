@@ -9,17 +9,17 @@ import logging
 import time
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel, Field
 
 from agents.base.types import TaskType
+
 from .providers.base import (
     LLMProvider,
     LLMRequest,
     LLMResponse,
     ModelCapability,
-    ProviderHealthStatus,
 )
 
 logger = logging.getLogger(__name__)
@@ -42,8 +42,8 @@ class RoutingPolicy(BaseModel):
     max_cost_per_request: float = 1.0  # Maximum cost in USD
     min_performance_tier: int = 3  # Minimum performance tier (1-5)
     privacy_required: bool = False  # Require local models
-    preferred_providers: list[str] = Field(default_factory=list)
-    fallback_providers: list[str] = Field(default_factory=list)
+    preferred_providers: List[str] = Field(default_factory=list)
+    fallback_providers: List[str] = Field(default_factory=list)
     max_response_time_ms: float = 30000  # Maximum acceptable response time
     enable_caching: bool = True
     cache_ttl_minutes: int = 60
@@ -58,8 +58,8 @@ class RoutingContext(BaseModel):
     privacy_sensitive: bool = False
     budget_remaining: Optional[float] = None
     deadline: Optional[datetime] = None
-    user_preferences: dict[str, Any] = Field(default_factory=dict)
-    previous_failures: list[str] = Field(default_factory=list)  # Failed provider names
+    user_preferences: Dict[str, Any] = Field(default_factory=dict)
+    previous_failures: List[str] = Field(default_factory=list)  # Failed provider names
 
 
 class RoutingDecision(BaseModel):
@@ -71,8 +71,8 @@ class RoutingDecision(BaseModel):
     estimated_cost: float
     estimated_response_time_ms: float
     confidence: float  # 0.0-1.0 confidence in decision
-    fallback_options: list[dict[str, str]] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    fallback_options: List[Dict[str, str]] = Field(default_factory=list)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
 class LLMRouter:
@@ -85,15 +85,15 @@ class LLMRouter:
 
     def __init__(self, default_policy: Optional[RoutingPolicy] = None):
         """Initialize the LLM router."""
-        self.providers: dict[str, LLMProvider] = {}
+        self.providers: Dict[str, LLMProvider] = {}
         self.default_policy = default_policy or RoutingPolicy()
-        self.routing_cache: dict[str, tuple[RoutingDecision, datetime]] = {}
-        self.provider_stats: dict[str, dict[str, Any]] = {}
+        self.routing_cache: Dict[str, Tuple[RoutingDecision, datetime]] = {}
+        self.provider_stats: Dict[str, Dict[str, Any]] = {}
 
         # Performance tracking
-        self.response_times: dict[str, list[float]] = {}
-        self.error_rates: dict[str, float] = {}
-        self.last_health_check: dict[str, datetime] = {}
+        self.response_times: Dict[str, List[float]] = {}
+        self.error_rates: Dict[str, float] = {}
+        self.last_health_check: Dict[str, datetime] = {}
 
     async def initialize(self) -> None:
         """Initialize all registered providers."""
@@ -275,7 +275,7 @@ class LLMRouter:
 
             raise
 
-    async def get_provider_status(self) -> dict[str, dict[str, Any]]:
+    async def get_provider_status(self) -> Dict[str, Dict[str, Any]]:
         """Get status of all providers."""
         status = {}
 
@@ -302,8 +302,8 @@ class LLMRouter:
         return status
 
     async def _get_available_providers(
-        self, excluded: Optional[list[str]] = None
-    ) -> list[str]:
+        self, excluded: Optional[List[str]] = None
+    ) -> List[str]:
         """Get list of available providers."""
         excluded = excluded or []
         available = []
@@ -346,8 +346,8 @@ class LLMRouter:
         request: LLMRequest,
         context: RoutingContext,
         policy: RoutingPolicy,
-        available_providers: list[str],
-    ) -> dict[str, dict[str, float]]:
+        available_providers: List[str],
+    ) -> Dict[str, Dict[str, float]]:
         """Score all available providers based on policy."""
         provider_scores = {}
 
@@ -557,7 +557,7 @@ class LLMRouter:
         return related_score
 
     def _calculate_weighted_score(
-        self, scores: dict[str, float], strategy: RoutingStrategy
+        self, scores: Dict[str, float], strategy: RoutingStrategy
     ) -> float:
         """Calculate weighted total score based on strategy."""
         weights = {
@@ -626,7 +626,7 @@ class LLMRouter:
         return defaults.get(provider_name, 7500)
 
     def _generate_reasoning(
-        self, strategy: RoutingStrategy, provider_name: str, scores: dict[str, float]
+        self, strategy: RoutingStrategy, provider_name: str, scores: Dict[str, float]
     ) -> str:
         """Generate human-readable reasoning for the decision."""
         top_scores = sorted(
@@ -648,8 +648,8 @@ class LLMRouter:
         return reasoning
 
     def _get_fallback_options(
-        self, provider_scores: dict[str, dict[str, float]], selected_provider: str
-    ) -> list[dict[str, str]]:
+        self, provider_scores: Dict[str, Dict[str, float]], selected_provider: str
+    ) -> List[Dict[str, str]]:
         """Get fallback options sorted by score."""
         fallbacks = []
 

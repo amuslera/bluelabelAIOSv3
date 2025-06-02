@@ -1,277 +1,214 @@
-# AIOSv3 Directory Structure
+# AIOSv3 Project Structure
+
+**Clean Production-Ready Architecture** (Post-Sprint 1.8 Reorganization)
+
+## Overview
+
+This document describes the clean, production-ready structure of AIOSv3 following the comprehensive codebase reorganization completed in Sprint 1.8. All experimental and legacy files have been moved to the `ARCHIVE/` directory for preservation while maintaining a professional, navigable codebase.
+
+## Production Directory Structure
 
 ```
-bluelabel-AIOSv3/
-├── .github/                      # GitHub specific files
-│   ├── workflows/                # CI/CD workflows
-│   └── ISSUE_TEMPLATE/           # Issue templates
+AIOSv3/
+├── 📁 agents/                      # Core Agent Framework
+│   ├── base/                       # Enhanced base agent system
+│   │   ├── enhanced_agent.py       # 🔧 Current production base
+│   │   ├── types.py                # Agent type definitions
+│   │   ├── lifecycle.py            # Agent lifecycle management
+│   │   ├── health.py               # Health monitoring
+│   │   ├── recovery.py             # Error recovery
+│   │   └── exceptions.py           # Agent exceptions
+│   └── specialists/                # Specialist Agent Implementations
+│       ├── backend_agent.py        # ✅ Backend Developer Agent
+│       ├── frontend_agent.py       # ✅ Frontend Developer Agent
+│       ├── qa_agent.py             # ✅ QA Engineer Agent
+│       ├── devops_agent.py         # ✅ DevOps Engineer Agent
+│       └── cto_agent.py            # ✅ CTO Agent
 │
-├── agents/                       # Agent implementations
-│   ├── base/                     # Base agent classes
-│   │   ├── __init__.py
-│   │   ├── agent.py              # Abstract base agent
-│   │   ├── memory.py             # Memory management
-│   │   └── context.py            # Context handling
-│   │
-│   ├── specialists/              # Specialized agents
-│   │   ├── __init__.py
-│   │   ├── cto_agent.py          # CTO/Architecture agent
-│   │   ├── backend_agent.py      # Backend developer
-│   │   ├── frontend_agent.py     # Frontend developer
-│   │   ├── qa_agent.py           # QA engineer
-│   │   └── devops_agent.py       # DevOps engineer
-│   │
-│   └── tests/                    # Agent-specific tests
-│       ├── __init__.py
-│       └── test_*.py
+├── 📁 core/                        # Core Infrastructure
+│   ├── routing/                    # LLM Routing & Providers
+│   │   ├── router.py               # 🎯 Intelligent LLM routing
+│   │   ├── llm_client.py           # LLM client interface
+│   │   └── providers/              # LLM Provider Implementations
+│   │       ├── base.py             # Provider base interface
+│   │       ├── claude.py           # 🔵 Anthropic Claude integration
+│   │       ├── openai.py           # 🟢 OpenAI GPT integration
+│   │       ├── local.py            # Local LLM integration
+│   │       └── mock_provider.py    # Mock provider for testing
+│   ├── memory/                     # Memory Management
+│   │   ├── base.py                 # Memory base classes
+│   │   ├── context_manager.py      # Context management
+│   │   ├── memory_manager.py       # Memory operations
+│   │   └── backends/               # Memory backends
+│   │       └── redis_backend.py    # Redis memory backend
+│   ├── intelligence/               # Intelligence Layer
+│   │   └── error_recovery.py       # Error recovery system
+│   ├── monitoring/                 # Metrics & Monitoring
+│   │   └── metrics.py              # Metrics collection
+│   ├── messaging/                  # Inter-Agent Communication
+│   │   ├── agent_router.py         # Agent message routing
+│   │   ├── error_handling.py       # Message error handling
+│   │   ├── queue.py                # Message queuing
+│   │   └── routing.py              # Message routing logic
+│   ├── orchestration/              # Agent Discovery & Registry
+│   │   ├── discovery.py            # Agent discovery
+│   │   └── registry.py             # Agent registry
+│   ├── storage/                    # Storage Systems
+│   │   ├── object_store.py         # Object storage
+│   │   └── versioning.py           # Version management
+│   └── workspace/                  # Workspace Management
+│       └── manager.py              # Workspace operations
 │
-├── core/                         # Core platform components
-│   ├── __init__.py
-│   ├── orchestrator/             # Agent orchestration
-│   │   ├── __init__.py
-│   │   ├── scheduler.py          # Task scheduling
-│   │   ├── workflow.py           # Workflow engine
-│   │   └── coordinator.py        # Agent coordination
-│   │
-│   ├── routing/                  # LLM routing logic
-│   │   ├── __init__.py
-│   │   ├── router.py             # Main routing engine
-│   │   ├── strategies.py         # Routing strategies
-│   │   └── models.py             # Model configurations
-│   │
-│   ├── communication/            # Inter-agent communication
-│   │   ├── __init__.py
-│   │   ├── mcp.py                # MCP protocol implementation
-│   │   ├── events.py             # Event system
-│   │   └── messages.py           # Message types
-│   │
-│   └── memory/                   # Shared memory system
-│       ├── __init__.py
-│       ├── store.py              # Memory storage
-│       ├── vector_db.py          # Vector DB interface
-│       └── cache.py              # Caching layer
+├── 📁 control_center/              # Production Control Center UI
+│   ├── main.py                     # 🖥️ Control Center application
+│   ├── simple_app.py               # Compatibility layer
+│   ├── run_control_center.py       # Control Center launcher
+│   └── components/                 # UI Components
+│       ├── agent_orchestra.py      # Agent orchestration UI
+│       ├── activity_monitor.py     # Activity monitoring
+│       ├── task_manager.py         # Task management UI
+│       └── pr_review.py            # PR review interface
 │
-├── integrations/                 # External integrations
-│   ├── __init__.py
-│   ├── llm/                      # LLM providers
-│   │   ├── __init__.py
-│   │   ├── base.py               # Base LLM interface
-│   │   ├── claude.py             # Claude integration
-│   │   ├── openai.py             # OpenAI integration
-│   │   ├── local/                # Local model integrations
-│   │   │   ├── __init__.py
-│   │   │   ├── llama.py          # Llama models
-│   │   │   ├── deepseek.py       # DeepSeek models
-│   │   │   └── qwen.py           # Qwen models
-│   │   └── config.py             # LLM configurations
-│   │
-│   ├── tools/                    # External tools
-│   │   ├── __init__.py
-│   │   ├── github.py             # GitHub integration
-│   │   ├── jira.py               # Jira integration
-│   │   ├── slack.py              # Slack integration
-│   │   └── custom.py             # Custom tool base
-│   │
-│   └── workflows/                # Workflow automation
-│       ├── __init__.py
-│       ├── n8n.py                # n8n integration
-│       └── templates/            # Workflow templates
+├── 📁 monitoring_system/           # Production Monitoring Server
+│   ├── server.py                   # 📊 Monitoring server
+│   ├── run_monitoring.py           # Monitoring launcher
+│   ├── metrics_collector.py        # Metrics collection
+│   └── src/                        # Monitoring components
+│       ├── monitoring_server.py    # Core monitoring server
+│       └── activity_store.py       # Activity storage
 │
-├── api/                          # API layer
-│   ├── __init__.py
-│   ├── main.py                   # FastAPI app
-│   ├── routes/                   # API routes
-│   │   ├── __init__.py
-│   │   ├── agents.py             # Agent endpoints
-│   │   ├── workflows.py          # Workflow endpoints
-│   │   ├── admin.py              # Admin endpoints
-│   │   └── health.py             # Health checks
-│   │
-│   ├── models/                   # Pydantic models
-│   │   ├── __init__.py
-│   │   ├── requests.py           # Request models
-│   │   └── responses.py          # Response models
-│   │
-│   └── middleware/               # API middleware
-│       ├── __init__.py
-│       ├── auth.py               # Authentication
-│       ├── rate_limit.py         # Rate limiting
-│       └── logging.py            # Request logging
+├── 📁 api/                         # REST API Interface
+│   ├── main.py                     # 🌐 FastAPI application
+│   └── routes/                     # API routes
 │
-├── ui/                           # Web UI (Phase 5)
-│   ├── src/                      # Source code
-│   │   ├── components/           # React components
-│   │   ├── pages/                # Page components
-│   │   ├── hooks/                # Custom hooks
-│   │   ├── services/             # API services
-│   │   └── App.tsx               # Main app
-│   │
-│   ├── public/                   # Static assets
-│   ├── package.json              # Node dependencies
-│   └── tsconfig.json             # TypeScript config
+├── 📁 config/                      # Configuration Files
+│   ├── agents.yaml                 # 🔧 Agent configurations
+│   ├── llm_config.py              # LLM configuration
+│   ├── models.yaml                 # Model definitions
+│   └── routing.yaml                # Routing configuration
 │
-├── infrastructure/               # Infrastructure as Code
-│   ├── docker/                   # Docker configurations
-│   │   ├── Dockerfile.agent      # Agent container
-│   │   ├── Dockerfile.api        # API container
-│   │   └── docker-compose.yml    # Local development
-│   │
-│   ├── kubernetes/               # K8s manifests
-│   │   ├── base/                 # Base configurations
-│   │   ├── overlays/             # Environment overlays
-│   │   └── helm/                 # Helm charts
-│   │
-│   └── terraform/                # Cloud infrastructure
-│       ├── modules/              # Terraform modules
-│       └── environments/         # Environment configs
+├── 📁 infrastructure/              # Deployment Infrastructure
+│   ├── docker/                     # Docker configurations
+│   ├── grafana/                    # Grafana dashboards
+│   └── prometheus/                 # Prometheus configuration
 │
-├── config/                       # Configuration files
-│   ├── __init__.py
-│   ├── settings.py               # Application settings
-│   ├── agents.yaml               # Agent configurations
-│   ├── models.yaml               # Model configurations
-│   └── workflows.yaml            # Workflow definitions
+├── 📁 scripts/                     # Production Scripts
+│   ├── dev-setup.sh               # Development setup
+│   ├── install_python.sh          # Python installation
+│   └── start.sh                    # System startup
 │
-├── scripts/                      # Utility scripts
-│   ├── setup.sh                  # Development setup
-│   ├── deploy.sh                 # Deployment script
-│   ├── test.sh                   # Test runner
-│   └── migrate.py                # Database migrations
+├── 📁 tests/                       # Organized Test Suite
+│   ├── unit/                       # Unit tests
+│   ├── integration/                # Integration tests
+│   ├── e2e/                        # End-to-end tests
+│   └── conftest.py                 # Test configuration
 │
-├── tests/                        # Integration tests
-│   ├── __init__.py
-│   ├── integration/              # Integration tests
-│   ├── e2e/                      # End-to-end tests
-│   └── fixtures/                 # Test fixtures
+├── 📁 docs/                        # Documentation
+│   └── sprints/                    # Sprint documentation
 │
-├── docs/                         # Documentation
-│   ├── architecture/             # Architecture docs
-│   │   ├── overview.md           # System overview
-│   │   ├── agents.md             # Agent design
-│   │   └── routing.md            # Routing design
-│   │
-│   ├── api/                      # API documentation
-│   ├── deployment/               # Deployment guides
-│   └── development/              # Development guides
+├── 📁 research/                    # Research & Planning
+│   └── aiosv3_blueprint.md         # System blueprint
 │
-├── monitoring/                   # Monitoring configs
-│   ├── prometheus/               # Prometheus configs
-│   ├── grafana/                  # Grafana dashboards
-│   └── alerts/                   # Alert rules
+├── 📁 ARCHIVE/                     # 🗄️ Archived Experimental Code
+│   ├── legacy_agents/              # Old agent implementations
+│   ├── dev_tests/                  # Development test files
+│   ├── prototypes/                 # Early prototypes
+│   ├── collaboration_experiments/  # Collaboration experiments
+│   ├── legacy_scripts/             # Old launch scripts
+│   └── old_orchestration/          # Previous orchestration systems
 │
-├── .env.example                  # Environment variables template
-├── .gitignore                    # Git ignore file
-├── README.md                     # Project README
-├── CLAUDE.md                     # AI assistant context
-├── PROJECT_PHASES.md             # Project roadmap
-├── PROJECT_STRUCTURE.md          # This file
-├── pyproject.toml                # Python project config
-├── requirements.txt              # Python dependencies
-├── requirements-dev.txt          # Dev dependencies
-└── Makefile                      # Common commands
+├── 🚀 enhanced_mock_provider.py    # Current Working Mock Provider
+├── 🎬 demo_orchestration.py        # Current Agent Demo
+├── 🎬 demo_real_llm_orchestration.py # Real LLM Multi-Agent Demo
+├── 🎬 demo_multi_agent_todo.py     # Multi-Agent Todo Demo
+├── 🧪 test_real_llm_providers.py   # Real LLM Provider Tests
+├── 🧪 test_agents_real_llm.py      # Agent Real LLM Tests
+├── 🚀 start_system.sh              # Production System Launcher
+└── 📋 pyproject.toml               # Package Configuration
 ```
 
-## Key Design Decisions
+## Core Component Status
 
-### 1. Modular Agent Architecture
-- Each agent is self-contained in `agents/specialists/`
-- Shared functionality in `agents/base/`
-- Clear separation between agent logic and infrastructure
+### ✅ Production Ready Components
 
-### 2. Core Platform Services
-- `core/orchestrator/`: Manages agent lifecycle and workflows
-- `core/routing/`: Handles LLM selection and routing
-- `core/communication/`: Standardized inter-agent messaging
-- `core/memory/`: Shared state and context management
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **Specialist Agents** | 🟢 PRODUCTION | All 5 agents working with real LLMs |
+| **LLM Router** | 🟢 PRODUCTION | Intelligent routing with Claude/OpenAI |
+| **Control Center** | 🟢 PRODUCTION | Full monitoring UI (Sprint 1.6) |
+| **Monitoring System** | 🟢 PRODUCTION | WebSocket server with metrics |
+| **Memory System** | 🟢 PRODUCTION | Redis backend with context management |
+| **Real LLM Integration** | 🟢 PRODUCTION | Claude + OpenAI providers (Sprint 1.8) |
 
-### 3. Integration Layer
-- `integrations/llm/`: Abstracted LLM providers
-- `integrations/tools/`: External service connectors
-- `integrations/workflows/`: Workflow automation adapters
+### 🔧 Development Components
 
-### 4. API Design
-- FastAPI-based REST API in `api/`
-- Clear route organization
-- Middleware for cross-cutting concerns
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **API Interface** | 🟡 BASIC | FastAPI structure exists |
+| **Authentication** | 🔴 TODO | Planned for Sprint 1.9 |
+| **Local LLM Support** | 🟡 PARTIAL | Ollama integration planned |
+| **Task Dependencies** | 🔴 TODO | Inter-agent dependencies |
 
-### 5. Infrastructure as Code
-- Docker for containerization
-- Kubernetes for orchestration
-- Terraform for cloud resources
+## Key Entry Points
 
-### 6. Configuration Management
-- YAML-based configuration in `config/`
-- Environment-specific overrides
-- Runtime configuration updates
+### Production Operations
+- **🚀 System Startup**: `start_system.sh`
+- **🖥️ Control Center**: `python3 control_center/main.py`
+- **📊 Monitoring**: `python3 monitoring_system/run_monitoring.py`
 
-### 7. Testing Strategy
-- Unit tests co-located with code
-- Integration tests in `tests/`
-- E2E tests for critical paths
+### Development & Testing
+- **🧪 LLM Provider Tests**: `python3 test_real_llm_providers.py`
+- **🧪 Agent Integration Tests**: `python3 test_agents_real_llm.py`
+- **🎬 Multi-Agent Demo**: `python3 demo_real_llm_orchestration.py`
 
-### 8. Documentation
-- Architecture documentation in `docs/`
-- API documentation auto-generated
-- Development guides for onboarding
+### Configuration
+- **🔧 Agent Config**: `config/agents.yaml`
+- **🔧 LLM Config**: `config/llm_config.py`
+- **🔧 Environment**: `.env` (API keys, settings)
 
-## File Naming Conventions
+## Archive Organization
 
-### Python Files
-- Snake_case for modules: `backend_agent.py`
-- Snake_case for functions: `process_request()`
-- PascalCase for classes: `BackendAgent`
+The `ARCHIVE/` directory preserves all experimental and development work:
 
-### TypeScript/JavaScript
-- PascalCase for components: `AgentDashboard.tsx`
-- camelCase for utilities: `formatResponse.ts`
-- kebab-case for CSS: `agent-dashboard.css`
+- **legacy_agents/**: Original agent implementations and theatrical experiments
+- **dev_tests/**: Development test files and experiments
+- **prototypes/**: Early UI prototypes and proof-of-concepts
+- **collaboration_experiments/**: Various collaboration approaches tested
+- **legacy_scripts/**: Sprint-specific and experimental launch scripts
+- **old_orchestration/**: Previous orchestration system implementations
 
-### Configuration Files
-- Lowercase with hyphens: `agent-config.yaml`
-- Environment prefix: `prod-settings.yaml`
+## Navigation Guidelines
 
-### Documentation
-- Uppercase for top-level: `README.md`
-- Lowercase for guides: `deployment-guide.md`
+### For Production Development
+1. **Agent Work**: Focus on `agents/specialists/` and `agents/base/`
+2. **Infrastructure**: Work in `core/` subdirectories
+3. **UI Development**: Use `control_center/` and `monitoring_system/`
+4. **Testing**: Use organized `tests/` structure
 
-## Module Dependencies
+### For Research & Learning
+1. **Current Capabilities**: Run demos in root directory
+2. **Historical Context**: Explore `ARCHIVE/` directories
+3. **Documentation**: Check `docs/` and sprint completion files
 
-```
-┌─────────────┐
-│     API     │ ◄── External requests
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│ Orchestrator │ ◄── Workflow management
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   Agents    │ ◄── Task execution
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│   Router    │ ◄── LLM selection
-└──────┬──────┘
-       │
-┌──────▼──────┐
-│     LLM     │ ◄── Model inference
-└─────────────┘
-```
+## Benefits of This Structure
 
-## Getting Started
+1. **🎯 Professional**: Clean, production-ready organization
+2. **📍 Navigable**: Easy to find current implementations
+3. **🏛️ Preserved**: All experimental work archived for reference
+4. **🔧 Scalable**: Room for future components without clutter
+5. **🧪 Testable**: Clear test organization matching code structure
+6. **📚 Documented**: Comprehensive documentation and examples
 
-1. Clone the repository
-2. Run `./scripts/setup.sh` to set up development environment
-3. Copy `.env.example` to `.env` and configure
-4. Run `docker-compose up` for local development
-5. Access API at `http://localhost:8000`
-6. Access UI at `http://localhost:3000` (when implemented)
+## Next Steps
 
-## Development Workflow
+Following this reorganization, the codebase is now ready for:
+- **Sprint 1.9**: Production infrastructure development
+- **Customer Pilots**: Professional codebase presentation
+- **Team Onboarding**: Clear structure for new developers
+- **Scaling**: Additional agents and capabilities
 
-1. Create feature branch from `main`
-2. Implement changes following structure
-3. Write tests for new functionality
-4. Update documentation
-5. Submit PR for review
-6. Merge after approval and CI pass
+---
+
+**Last Updated**: Sprint 1.8 (January 6, 2025)  
+**Status**: 🟢 Production Ready Structure  
+**Next Sprint**: Production Infrastructure & Complex Projects

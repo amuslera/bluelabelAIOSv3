@@ -9,26 +9,24 @@ This agent leverages the Enhanced BaseAgent framework to provide:
 - Technical decision-making and documentation
 """
 
-import json
 import re
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, Optional
 
 from agents.base.enhanced_agent import (
-    EnhancedBaseAgent, 
-    EnhancedAgentConfig, 
-    EnhancedTask, 
-    EnhancedTaskResult,
-    AgentCapability
+    AgentCapability,
+    EnhancedAgentConfig,
+    EnhancedBaseAgent,
+    EnhancedTask,
 )
 from agents.base.types import AgentType, TaskType
-from core.routing.router import RoutingContext, RoutingStrategy
 from core.routing.providers.base import LLMResponse
+from core.routing.router import RoutingStrategy
 
 
 class CTOAgentConfig(EnhancedAgentConfig):
     """Enhanced configuration for CTO Agent with specialized settings."""
-    
+
     def __init__(self, **kwargs):
         # Set CTO-specific defaults
         defaults = {
@@ -62,18 +60,18 @@ class CTOAgent(EnhancedBaseAgent):
     - Engineering best practices and standards
     - Risk assessment and mitigation strategies
     """
-    
+
     def __init__(self, config: Optional[CTOAgentConfig] = None):
         """Initialize CTO Agent with specialized configuration."""
         if config is None:
             config = CTOAgentConfig()
-        
+
         super().__init__(config)
-        
+
         # CTO-specific knowledge areas
         self.expertise_areas = [
             "system_architecture",
-            "microservices", 
+            "microservices",
             "cloud_platforms",
             "scalability",
             "performance",
@@ -82,12 +80,12 @@ class CTOAgent(EnhancedBaseAgent):
             "team_leadership",
             "technical_strategy"
         ]
-        
+
         # Decision frameworks
         self.decision_frameworks = {
             "architecture": [
                 "scalability_requirements",
-                "performance_needs", 
+                "performance_needs",
                 "team_expertise",
                 "operational_complexity",
                 "cost_considerations",
@@ -102,7 +100,7 @@ class CTOAgent(EnhancedBaseAgent):
                 "vendor_risk"
             ]
         }
-    
+
     async def _on_initialize(self) -> None:
         """CTO Agent initialization - load architectural knowledge."""
         # Store CTO expertise in knowledge base
@@ -111,7 +109,7 @@ class CTOAgent(EnhancedBaseAgent):
             category="agent_identity",
             keywords=["cto", "architecture", "leadership", "strategy"]
         )
-        
+
         # Store architectural principles
         principles = """
         Key Architectural Principles:
@@ -122,22 +120,22 @@ class CTOAgent(EnhancedBaseAgent):
         5. Security: Build it in from the start
         6. Cost-effectiveness: Optimize for business value
         """
-        
+
         await self.store_knowledge(
             content=principles,
             category="architectural_principles",
             keywords=["architecture", "principles", "best_practices"]
         )
-    
+
     async def _on_shutdown(self) -> None:
         """CTO Agent shutdown - save decision context."""
         # Could save current architectural decisions or recommendations
         pass
-    
+
     async def _process_response(self, response: LLMResponse, task: EnhancedTask) -> str:
         """Process and structure CTO Agent responses for clarity and actionability."""
         content = response.content
-        
+
         # Structure different types of CTO responses
         if task.task_type == TaskType.SYSTEM_DESIGN:
             return self._format_architecture_response(content, task)
@@ -149,7 +147,7 @@ class CTOAgent(EnhancedBaseAgent):
             return self._format_strategy_response(content, task)
         else:
             return self._format_general_response(content, task)
-    
+
     def _format_architecture_response(self, content: str, task: EnhancedTask) -> str:
         """Format architectural design responses with clear structure."""
         return f"""# 🏗️ Architectural Analysis
@@ -172,7 +170,7 @@ class CTOAgent(EnhancedBaseAgent):
 ---
 *CTO Agent Analysis | {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 """
-    
+
     def _format_code_review_response(self, content: str, task: EnhancedTask) -> str:
         """Format code review responses with actionable feedback."""
         return f"""# 🔍 CTO Code Review
@@ -195,7 +193,7 @@ class CTOAgent(EnhancedBaseAgent):
 ---
 *CTO Code Review | {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 """
-    
+
     def _format_decision_response(self, content: str, task: EnhancedTask) -> str:
         """Format technology decisions with clear rationale."""
         return f"""# ⚖️ Technical Decision Analysis
@@ -222,7 +220,7 @@ class CTOAgent(EnhancedBaseAgent):
 ---
 *CTO Decision | {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 """
-    
+
     def _format_strategy_response(self, content: str, task: EnhancedTask) -> str:
         """Format strategic planning responses."""
         return f"""# 🎯 Technical Strategy & Planning
@@ -248,7 +246,7 @@ class CTOAgent(EnhancedBaseAgent):
 ---
 *CTO Strategy | {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 """
-    
+
     def _format_general_response(self, content: str, task: EnhancedTask) -> str:
         """Format general CTO responses."""
         return f"""# 🎯 CTO Analysis
@@ -264,7 +262,7 @@ class CTOAgent(EnhancedBaseAgent):
 ---
 *CTO Agent | {datetime.now().strftime('%Y-%m-%d %H:%M')}*
 """
-    
+
     def _extract_summary(self, content: str) -> str:
         """Extract or generate executive summary from response."""
         # Look for summary sections in the content
@@ -273,16 +271,16 @@ class CTOAgent(EnhancedBaseAgent):
             r"(?:## Executive Summary|# Executive Summary)(.*?)(?=\n#|\n##|\Z)",
             r"(?:In summary|To summarize)(.*?)(?=\n|\Z)"
         ]
-        
+
         for pattern in summary_patterns:
             match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
             if match:
                 return match.group(1).strip()
-        
+
         # If no explicit summary, take first substantial paragraph
         paragraphs = [p.strip() for p in content.split('\n\n') if p.strip()]
         return paragraphs[0] if paragraphs else "Analysis provided above."
-    
+
     def _extract_recommendations(self, content: str) -> str:
         """Extract recommendations from response."""
         recommendation_patterns = [
@@ -290,21 +288,21 @@ class CTOAgent(EnhancedBaseAgent):
             r"(?:## Action Items|# Action Items)(.*?)(?=\n#|\n##|\Z)",
             r"(?:I recommend|My recommendation)(.*?)(?=\n|\Z)"
         ]
-        
+
         for pattern in recommendation_patterns:
             match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
             if match:
                 return match.group(1).strip()
-        
+
         # Look for bullet points or numbered lists
         lines = content.split('\n')
         recommendations = []
         for line in lines:
             if re.match(r'^\s*[\d\-\*]\s*', line):
                 recommendations.append(line.strip())
-        
+
         return '\n'.join(recommendations) if recommendations else "See detailed analysis above."
-    
+
     def _extract_next_steps(self, content: str) -> str:
         """Extract next steps from response."""
         next_steps_patterns = [
@@ -312,19 +310,19 @@ class CTOAgent(EnhancedBaseAgent):
             r"(?:## Implementation|# Implementation)(.*?)(?=\n#|\n##|\Z)",
             r"(?:Moving forward|Next, we should)(.*?)(?=\n|\Z)"
         ]
-        
+
         for pattern in next_steps_patterns:
             match = re.search(pattern, content, re.DOTALL | re.IGNORECASE)
             if match:
                 return match.group(1).strip()
-        
+
         return "1. Review and validate recommendations\n2. Create implementation plan\n3. Begin execution with team"
-    
+
     async def _customize_prompt(self, task: EnhancedTask, context: str) -> str:
         """Customize prompts with CTO-specific expertise and frameworks."""
-        
+
         # Build CTO-specific context
-        cto_context = f"""
+        cto_context = """
 You are the CTO (Chief Technology Officer) of AIOSv3, a cutting-edge AI agent platform. Your expertise includes:
 
 **Core Competencies:**
@@ -395,11 +393,11 @@ Focus on:
 - Success metrics and milestones
 """
         }
-        
+
         guidance = task_guidance.get(task.task_type, """
 Provide thoughtful technical leadership perspective on this request.
 """)
-        
+
         return f"""{cto_context}
 
 {guidance}
@@ -414,26 +412,25 @@ Please provide your analysis and recommendations as the CTO."""
 # Factory function for easy CTO Agent creation
 async def create_cto_agent(custom_config: Optional[Dict[str, Any]] = None) -> CTOAgent:
     """Create and initialize a CTO Agent with optional custom configuration."""
-    
+
     config_params = custom_config or {}
     config = CTOAgentConfig(**config_params)
-    
+
     agent = CTOAgent(config)
     await agent.initialize()
-    
+
     return agent
 
 
 # Example usage and testing
 if __name__ == "__main__":
-    import asyncio
-    
+
     async def test_cto_agent():
         """Test CTO Agent functionality."""
-        
+
         # Create CTO Agent
         cto = await create_cto_agent()
-        
+
         # Test architectural decision task
         architecture_task = EnhancedTask(
             task_type=TaskType.SYSTEM_DESIGN,
@@ -446,7 +443,7 @@ if __name__ == "__main__":
                 "timeline": "6 months"
             }
         )
-        
+
         print("🏗️ Testing CTO Agent - Architecture Decision")
         result = await cto.process_task(architecture_task)
         print(f"Success: {result.success}")
@@ -455,7 +452,7 @@ if __name__ == "__main__":
         print(f"Model used: {result.model_used}")
         print("\n" + "="*80)
         print(result.output)
-        
+
         # Test technology decision
         tech_task = EnhancedTask(
             task_type=TaskType.TECH_DECISION,
@@ -467,7 +464,7 @@ if __name__ == "__main__":
                 "latency_requirements": "sub-second"
             }
         )
-        
+
         print("\n\n⚖️ Testing CTO Agent - Technology Decision")
         result = await cto.process_task(tech_task)
         print(f"Success: {result.success}")
@@ -475,15 +472,15 @@ if __name__ == "__main__":
         print(f"Output length: {len(result.output)} chars")
         print("\n" + "="*80)
         print(result.output[:500] + "..." if len(result.output) > 500 else result.output)
-        
+
         # Get agent status
         status = cto.get_status()
-        print(f"\n📊 CTO Agent Status:")
+        print("\n📊 CTO Agent Status:")
         print(f"Tasks completed: {status['tasks_completed']}")
         print(f"Success rate: {status['success_rate']:.1%}")
         print(f"Total cost: ${status['total_cost']:.4f}")
-        
+
         await cto.stop()
-    
+
     # Run test
     # asyncio.run(test_cto_agent())

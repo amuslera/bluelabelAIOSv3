@@ -7,10 +7,14 @@ for optimal task assignment and agent collaboration.
 
 import logging
 import random
-from datetime import datetime, timedelta
-from typing import Any
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from agents.base.types import AgentHealth, AgentMetadata, AgentState, AgentType, TaskType
+from agents.base.types import (
+    AgentState,
+    AgentType,
+    TaskType,
+)
 from core.orchestration.registry import AgentRegistry, get_agent_registry
 
 logger = logging.getLogger(__name__)
@@ -28,7 +32,7 @@ class AgentDiscovery:
     - Geographic and resource-based routing
     """
 
-    def __init__(self, registry: AgentRegistry | None = None):
+    def __init__(self, registry: Optional[AgentRegistry] = None):
         """Initialize the discovery service."""
         self.registry = registry
 
@@ -43,9 +47,9 @@ class AgentDiscovery:
         task_type: TaskType,
         complexity: int = 5,
         privacy_required: bool = False,
-        preferred_agent_type: AgentType | None = None,
-        exclude_agents: list[str] | None = None,
-    ) -> str | None:
+        preferred_agent_type: Optional[AgentType] = None,
+        exclude_agents: Optional[List[str]] = None,
+    ) -> Optional[str]:
         """
         Find the best agent to handle a specific task.
 
@@ -75,7 +79,7 @@ class AgentDiscovery:
 
             # Filter by availability and health
             available_agents = await self._filter_available_agents(candidates)
-            
+
             if not available_agents:
                 logger.warning("No available agents found")
                 return None
@@ -91,12 +95,12 @@ class AgentDiscovery:
 
             # Select best agent (highest score)
             best_agent = max(scored_agents, key=lambda x: x["score"])
-            
+
             logger.info(
                 f"Selected agent {best_agent['agent_id']} (score: {best_agent['score']:.2f}) "
                 f"for task type {task_type.value}"
             )
-            
+
             return best_agent["agent_id"]
 
         except Exception as e:
@@ -108,7 +112,7 @@ class AgentDiscovery:
         agent_type: AgentType,
         healthy_only: bool = True,
         available_only: bool = True,
-    ) -> list[str]:
+    ) -> List[str]:
         """Find all agents of a specific type."""
         try:
             agents = await self.registry.list_agents(
@@ -130,7 +134,7 @@ class AgentDiscovery:
         capability: str,
         healthy_only: bool = True,
         available_only: bool = True,
-    ) -> list[str]:
+    ) -> List[str]:
         """Find all agents with a specific capability."""
         try:
             agents = await self.registry.find_agents_by_capability(capability)
@@ -152,7 +156,7 @@ class AgentDiscovery:
             logger.error(f"Error finding agents by capability {capability}: {e}")
             return []
 
-    async def get_agent_load_balancing_info(self, agent_ids: list[str]) -> dict[str, dict[str, Any]]:
+    async def get_agent_load_balancing_info(self, agent_ids: List[str]) -> Dict[str, Dict[str, Any]]:
         """Get load balancing information for a list of agents."""
         try:
             load_info = {}
@@ -181,9 +185,9 @@ class AgentDiscovery:
 
     async def select_agent_with_load_balancing(
         self,
-        agent_ids: list[str],
+        agent_ids: List[str],
         strategy: str = "least_loaded",
-    ) -> str | None:
+    ) -> Optional[str]:
         """
         Select an agent using load balancing strategy.
 
@@ -207,7 +211,7 @@ class AgentDiscovery:
 
             # For other strategies, we need load balancing info
             load_info = await self.get_agent_load_balancing_info(agent_ids)
-            
+
             if not load_info:
                 # Fallback to random if no load info available
                 return random.choice(agent_ids)
@@ -238,11 +242,11 @@ class AgentDiscovery:
             logger.error(f"Error in load balancing selection: {e}")
             return random.choice(agent_ids) if agent_ids else None
 
-    async def get_discovery_stats(self) -> dict[str, Any]:
+    async def get_discovery_stats(self) -> Dict[str, Any]:
         """Get discovery service statistics."""
         try:
             registry_stats = await self.registry.get_registry_stats()
-            
+
             # Add discovery-specific stats
             discovery_stats = {
                 "registry_stats": registry_stats,
@@ -265,9 +269,9 @@ class AgentDiscovery:
     async def _get_candidate_agents(
         self,
         task_type: TaskType,
-        preferred_agent_type: AgentType | None = None,
-        exclude_agents: list[str] | None = None,
-    ) -> list[str]:
+        preferred_agent_type: Optional[AgentType] = None,
+        exclude_agents: Optional[List[str]] = None,
+    ) -> List[str]:
         """Get candidate agents that can potentially handle the task."""
         candidates = []
         exclude_agents = exclude_agents or []
@@ -279,7 +283,7 @@ class AgentDiscovery:
 
         # Find agents by capability mapping
         capability_agents = []
-        
+
         # Map task types to capabilities (simplified mapping)
         task_capability_map = {
             TaskType.CODE_REVIEW: ["code_review", "backend_development", "frontend_development"],
@@ -291,23 +295,23 @@ class AgentDiscovery:
         }
 
         capabilities = task_capability_map.get(task_type, ["general"])
-        
+
         for capability in capabilities:
             cap_agents = await self.registry.find_agents_by_capability(capability)
             capability_agents.extend([aid for aid in cap_agents if aid not in exclude_agents])
 
         # Combine and deduplicate
         all_candidates = list(set(candidates + capability_agents))
-        
+
         return all_candidates
 
-    async def _filter_available_agents(self, agent_ids: list[str]) -> list[str]:
+    async def _filter_available_agents(self, agent_ids: List[str]) -> List[str]:
         """Filter agents by availability (can accept new tasks)."""
         available_agents = []
 
         for agent_id in agent_ids:
             health = await self.registry.get_agent_health(agent_id)
-            
+
             if not health:
                 continue
 
@@ -320,11 +324,11 @@ class AgentDiscovery:
 
     async def _score_agents_for_task(
         self,
-        agent_ids: list[str],
+        agent_ids: List[str],
         task_type: TaskType,
         complexity: int,
         privacy_required: bool,
-    ) -> list[dict[str, Any]]:
+    ) -> List[Dict[str, Any]]:
         """Score agents based on their suitability for the task."""
         scored_agents = []
 
@@ -333,7 +337,7 @@ class AgentDiscovery:
                 score = await self._calculate_agent_task_score(
                     agent_id, task_type, complexity, privacy_required
                 )
-                
+
                 if score > 0:  # Only include agents with positive scores
                     scored_agents.append({
                         "agent_id": agent_id,
@@ -381,7 +385,7 @@ class AgentDiscovery:
         score += complexity_score * 10  # 10% weight
 
         # Penalize for high resource usage
-        resource_penalty = (health.cpu_usage_percent / 100.0 + 
+        resource_penalty = (health.cpu_usage_percent / 100.0 +
                           min(health.memory_usage_mb / 1000.0, 1.0)) / 2
         score *= (1.0 - resource_penalty * 0.2)  # Up to 20% penalty
 
@@ -450,7 +454,7 @@ class AgentDiscovery:
         }
 
         min_complexity, max_complexity = complexity_ranges.get(agent_type, (1, 10))
-        
+
         if complexity < min_complexity:
             # Over-qualified
             return 0.7
@@ -468,25 +472,25 @@ class AgentDiscovery:
 
 
 # Global discovery instance
-agent_discovery: AgentDiscovery | None = None
+agent_discovery: Optional[AgentDiscovery] = None
 
 
 async def get_agent_discovery() -> AgentDiscovery:
     """Get the global agent discovery instance."""
     global agent_discovery
-    
+
     if agent_discovery is None:
         agent_discovery = AgentDiscovery()
         await agent_discovery.initialize()
-    
+
     return agent_discovery
 
 
-async def initialize_agent_discovery(registry: AgentRegistry | None = None) -> AgentDiscovery:
+async def initialize_agent_discovery(registry: Optional[AgentRegistry] = None) -> AgentDiscovery:
     """Initialize the global agent discovery instance."""
     global agent_discovery
-    
+
     agent_discovery = AgentDiscovery(registry)
     await agent_discovery.initialize()
-    
+
     return agent_discovery

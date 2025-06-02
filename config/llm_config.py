@@ -5,7 +5,7 @@ Provides configuration for LLM providers and routing strategies.
 """
 
 import os
-from typing import Dict, Any, List
+from typing import Any, Dict
 
 from core.routing.providers.claude import ClaudeConfig
 from core.routing.router import RoutingStrategy
@@ -14,11 +14,14 @@ from core.routing.router import RoutingStrategy
 def get_claude_config() -> ClaudeConfig:
     """Get Claude provider configuration."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
-    
+
     if not api_key:
-        # For testing, use a mock key
-        api_key = "mock-api-key-for-testing"
-    
+        raise ValueError(
+            "ANTHROPIC_API_KEY environment variable is required. "
+            "Set it in your .env file or environment. "
+            "For testing, use the mock provider instead."
+        )
+
     return ClaudeConfig(
         provider_name="claude",
         api_key=api_key,
@@ -58,7 +61,7 @@ DEVELOPMENT_CONFIG = {
 
 TESTING_CONFIG = {
     "llm_routing": get_llm_routing_config(),
-    "logging_level": "INFO", 
+    "logging_level": "INFO",
     "enable_metrics": False,
     "mock_providers": True  # Use mock providers in tests
 }
@@ -78,5 +81,5 @@ def get_config(environment: str = "development") -> Dict[str, Any]:
         "testing": TESTING_CONFIG,
         "production": PRODUCTION_CONFIG
     }
-    
+
     return configs.get(environment, DEVELOPMENT_CONFIG)

@@ -5,6 +5,7 @@ Provides comprehensive memory management for agents including conversation
 context, knowledge storage, and intelligent compression.
 """
 
+from .backends import RedisMemoryBackend
 from .base import (
     ConversationContext,
     EmbeddingProvider,
@@ -18,7 +19,6 @@ from .base import (
     MemoryStats,
     MemoryType,
 )
-from .backends import RedisMemoryBackend
 from .context_manager import ContextManager
 from .memory_manager import AIOSMemoryManager
 
@@ -26,7 +26,7 @@ __all__ = [
     # Base classes and models
     "MemoryEntry",
     "MemoryType",
-    "MemoryPriority", 
+    "MemoryPriority",
     "MemoryScope",
     "MemoryQuery",
     "MemorySearchResult",

@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from core.storage.object_store import ObjectStorage, get_object_storage
 
@@ -49,10 +49,10 @@ class VersionInfo:
     created_by: str
     size: int
     checksum: str
-    tags: dict[str, str]
+    tags: Dict[str, str]
     is_latest: bool = False
     is_backup: bool = False
-    change_description: str | None = None
+    change_description: Optional[str] = None
 
 
 @dataclass
@@ -66,7 +66,7 @@ class VersioningConfig:
     retention_days: int = 30
     max_storage_mb: int = 1000
     auto_backup: bool = True
-    preserve_tags: list[str] | None = None  # Tags that prevent deletion
+    preserve_tags: Optional[List[str]] = None  # Tags that prevent deletion
 
 
 class VersionManager:
@@ -81,10 +81,10 @@ class VersionManager:
     - Storage optimization
     """
 
-    def __init__(self, storage: ObjectStorage | None = None):
+    def __init__(self, storage: Optional[ObjectStorage] = None):
         """Initialize version manager."""
         self.storage = storage
-        self.versioning_configs: dict[str, VersioningConfig] = {}
+        self.versioning_configs: Dict[str, VersioningConfig] = {}
 
     async def initialize(self) -> None:
         """Initialize version manager."""
@@ -108,8 +108,8 @@ class VersionManager:
         logger.info(f"Set versioning config for pattern {bucket_pattern}")
 
     async def get_versions(
-        self, bucket_name: str, object_key: str, limit: int | None = None
-    ) -> list[VersionInfo]:
+        self, bucket_name: str, object_key: str, limit: Optional[int] = None
+    ) -> List[VersionInfo]:
         """Get all versions of an object."""
         try:
             # Get all versions from storage
@@ -176,8 +176,8 @@ class VersionManager:
         bucket_name: str,
         object_key: str,
         backup_type: str = "manual",
-        description: str | None = None,
-    ) -> str | None:
+        description: Optional[str] = None,
+    ) -> Optional[str]:
         """Create a backup of the current version."""
         try:
             # Get current object metadata
@@ -275,9 +275,9 @@ class VersionManager:
     async def cleanup_old_versions(
         self,
         bucket_name: str,
-        object_key: str | None = None,
-        config: VersioningConfig | None = None,
-    ) -> dict[str, Any]:
+        object_key: Optional[str] = None,
+        config: Optional[VersioningConfig] = None,
+    ) -> Dict[str, Any]:
         """Clean up old versions based on policy."""
         cleanup_config = config or self._get_versioning_config(bucket_name)
 
@@ -324,8 +324,8 @@ class VersionManager:
         return cleanup_result
 
     async def get_storage_stats(
-        self, bucket_name: str, object_prefix: str | None = None
-    ) -> dict[str, Any]:
+        self, bucket_name: str, object_prefix: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Get storage statistics for versioned objects."""
         try:
             objects = await self.storage.list_objects(
@@ -419,7 +419,7 @@ class VersionManager:
 
     async def _cleanup_object_versions(
         self, bucket_name: str, object_key: str, config: VersioningConfig
-    ) -> dict[str, int]:
+    ) -> Dict[str, int]:
         """Clean up versions for a specific object."""
         versions = await self.get_versions(bucket_name, object_key)
 
@@ -551,7 +551,7 @@ class VersionManager:
 
 
 # Global version manager instance
-version_manager: VersionManager | None = None
+version_manager: Optional[VersionManager] = None
 
 
 async def get_version_manager() -> VersionManager:

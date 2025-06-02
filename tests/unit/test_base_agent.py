@@ -5,7 +5,7 @@ Unit tests for the base agent framework.
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
 from agents.base.agent import BaseAgent, Task, TaskResult, AgentConfig
 from agents.base.types import AgentType, TaskType, Priority, AgentState
@@ -15,7 +15,7 @@ from agents.base.exceptions import AgentInitializationError, TaskExecutionError
 class TestAgent(BaseAgent):
     """Test implementation of BaseAgent for testing purposes."""
     
-    async def _execute_task_internal(self, task: Task, model_id: str) -> dict[str, Any]:
+    async def _execute_task_internal(self, task: Task, model_id: str) -> Dict[str, Any]:
         """Simple test task execution."""
         return {"result": f"Completed task {task.id} with model {model_id}"}
 

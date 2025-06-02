@@ -2,10 +2,10 @@
 Control Center UI Components
 """
 
-from .agent_orchestra import AgentOrchestraPanel
 from .activity_monitor import ActivityMonitorPanel
-from .task_manager import TaskManagerPanel
+from .agent_orchestra import AgentOrchestraPanel
 from .pr_review import PRReviewPanel
+from .task_manager import TaskManagerPanel
 
 __all__ = [
     'AgentOrchestraPanel',

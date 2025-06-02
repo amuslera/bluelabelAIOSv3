@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 from core.storage.object_store import ObjectStorage, get_object_storage
 
@@ -45,7 +45,7 @@ class WorkspaceConfig:
     workspace_id: str
     workspace_type: WorkspaceType
     owner_agent_id: str
-    authorized_agents: list[str]
+    authorized_agents: List[str]
     conflict_resolution: ConflictResolution = ConflictResolution.LAST_WRITER_WINS
     auto_sync: bool = True
     sync_interval: float = 30.0  # seconds
@@ -74,12 +74,12 @@ class FileConflict:
 
     file_path: str
     workspace_id: str
-    conflicting_versions: list[dict[str, Any]]
+    conflicting_versions: List[Dict[str, Any]]
     conflict_type: str
     detected_at: datetime
     resolution_strategy: ConflictResolution
     resolved: bool = False
-    resolution_result: str | None = None
+    resolution_result: Optional[str] = None
 
 
 class WorkspaceManager:
@@ -94,12 +94,12 @@ class WorkspaceManager:
     - Access control and permissions
     """
 
-    def __init__(self, storage: ObjectStorage | None = None):
+    def __init__(self, storage: Optional[ObjectStorage] = None):
         """Initialize workspace manager."""
         self.storage = storage
-        self.active_workspaces: dict[str, WorkspaceConfig] = {}
-        self.sync_tasks: dict[str, asyncio.Task] = {}
-        self.conflict_queue: list[FileConflict] = []
+        self.active_workspaces: Dict[str, WorkspaceConfig] = {}
+        self.sync_tasks: Dict[str, asyncio.Task] = {}
+        self.conflict_queue: List[FileConflict] = []
 
     async def initialize(self) -> None:
         """Initialize workspace manager."""
@@ -116,8 +116,8 @@ class WorkspaceManager:
         workspace_id: str,
         workspace_type: WorkspaceType,
         owner_agent_id: str,
-        authorized_agents: list[str] | None = None,
-        config: dict[str, Any] | None = None,
+        authorized_agents: Optional[List[str]] = None,
+        config: Optional[Dict[str, Any]] = None,
     ) -> WorkspaceConfig:
         """Create a new workspace for an agent or project."""
         authorized_agents = authorized_agents or [owner_agent_id]
@@ -146,7 +146,7 @@ class WorkspaceManager:
         logger.info(f"Created workspace {workspace_id} for agent {owner_agent_id}")
         return workspace_config
 
-    async def get_workspace(self, workspace_id: str) -> WorkspaceConfig | None:
+    async def get_workspace(self, workspace_id: str) -> Optional[WorkspaceConfig]:
         """Get workspace configuration."""
         if workspace_id in self.active_workspaces:
             return self.active_workspaces[workspace_id]
@@ -156,9 +156,9 @@ class WorkspaceManager:
 
     async def list_workspaces(
         self,
-        agent_id: str | None = None,
-        workspace_type: WorkspaceType | None = None,
-    ) -> list[WorkspaceMetadata]:
+        agent_id: Optional[str] = None,
+        workspace_type: Optional[WorkspaceType] = None,
+    ) -> List[WorkspaceMetadata]:
         """List available workspaces."""
         workspaces = []
 
@@ -213,7 +213,7 @@ class WorkspaceManager:
         file_path: str,
         local_path: Path,
         agent_id: str,
-        metadata: dict[str, Any] | None = None,
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> str:
         """Upload a file to a workspace with conflict detection."""
         workspace = await self.get_workspace(workspace_id)
@@ -281,7 +281,7 @@ class WorkspaceManager:
         file_path: str,
         local_path: Path,
         agent_id: str,
-        version_id: str | None = None,
+        version_id: Optional[str] = None,
     ) -> Path:
         """Download a file from a workspace."""
         workspace = await self.get_workspace(workspace_id)
@@ -312,8 +312,8 @@ class WorkspaceManager:
         return result
 
     async def list_workspace_files(
-        self, workspace_id: str, agent_id: str, prefix: str | None = None
-    ) -> list[dict[str, Any]]:
+        self, workspace_id: str, agent_id: str, prefix: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """List files in a workspace."""
         workspace = await self.get_workspace(workspace_id)
         if not workspace:
@@ -353,7 +353,7 @@ class WorkspaceManager:
 
         return files
 
-    async def sync_workspace(self, workspace_id: str) -> dict[str, Any]:
+    async def sync_workspace(self, workspace_id: str) -> Dict[str, Any]:
         """Manually sync a workspace."""
         workspace = await self.get_workspace(workspace_id)
         if not workspace:
@@ -442,7 +442,7 @@ class WorkspaceManager:
 
     async def cleanup_workspace(
         self, workspace_id: str, agent_id: str, cleanup_type: str = "old_versions"
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         """Clean up old versions and temporary files."""
         workspace = await self.get_workspace(workspace_id)
         if not workspace:
@@ -578,7 +578,7 @@ class WorkspaceManager:
 
     async def _load_workspace_config(
         self, workspace_id: str
-    ) -> WorkspaceConfig | None:
+    ) -> Optional[WorkspaceConfig]:
         """Load a specific workspace configuration."""
         try:
             return await self._load_workspace_config_from_object(
@@ -589,7 +589,7 @@ class WorkspaceManager:
 
     async def _load_workspace_config_from_object(
         self, object_key: str
-    ) -> WorkspaceConfig | None:
+    ) -> Optional[WorkspaceConfig]:
         """Load workspace config from storage object."""
         try:
             data = await self.storage.download_data(
@@ -640,7 +640,7 @@ class WorkspaceManager:
         file_path: str,
         agent_id: str,
         existing_metadata: Any,
-    ) -> FileConflict | None:
+    ) -> Optional[FileConflict]:
         """Handle file conflicts based on workspace strategy."""
         if workspace.conflict_resolution == ConflictResolution.LAST_WRITER_WINS:
             # Allow overwrite - no conflict
@@ -743,7 +743,7 @@ class WorkspaceManager:
 
 
 # Global workspace manager instance
-workspace_manager: WorkspaceManager | None = None
+workspace_manager: Optional[WorkspaceManager] = None
 
 
 async def get_workspace_manager() -> WorkspaceManager:

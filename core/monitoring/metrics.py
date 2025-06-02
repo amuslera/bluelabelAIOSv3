@@ -219,7 +219,7 @@ class AIOSv3Metrics:
         agent_id: str,
         operation_type: str,
         status: str = "success",
-        duration: float | None = None,
+        duration: Optional[float] = None,
     ):
         """Track an agent operation."""
         self.agent_operations_total.labels(
@@ -247,7 +247,7 @@ class AIOSv3Metrics:
         receiver_agent: str,
         message_type: str,
         status: str = "success",
-        processing_duration: float | None = None,
+        processing_duration: Optional[float] = None,
     ):
         """Track a consumed message."""
         self.messages_consumed_total.labels(
@@ -279,8 +279,8 @@ class AIOSv3Metrics:
         bucket: str,
         operation: str,
         status: str = "success",
-        duration: float | None = None,
-        bytes_transferred: int | None = None,
+        duration: Optional[float] = None,
+        bytes_transferred: Optional[int] = None,
     ):
         """Track a storage operation."""
         self.storage_operations_total.labels(
@@ -358,8 +358,8 @@ class AIOSv3Metrics:
     async def track_operation(
         self,
         operation_type: str,
-        agent_id: str | None = None,
-        component: str | None = None,
+        agent_id: Optional[str] = None,
+        component: Optional[str] = None,
     ):
         """Context manager to track operation duration."""
         start_time = time.time()
@@ -393,7 +393,7 @@ class AIOSv3Metrics:
 
 
 # Global metrics instance
-metrics: AIOSv3Metrics | None = None
+metrics: Optional[AIOSv3Metrics] = None
 
 
 def get_metrics() -> AIOSv3Metrics:

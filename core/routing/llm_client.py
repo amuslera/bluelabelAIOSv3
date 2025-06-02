@@ -6,7 +6,6 @@ Supports Anthropic Claude, OpenAI, and local Ollama models.
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import httpx
 from pydantic import BaseModel
@@ -19,7 +18,7 @@ class LLMResponse(BaseModel):
 
     content: str
     model: str
-    usage: dict[str, int] = {}
+    usage: Dict[str, int] = {}
     finish_reason: str = "completed"
     cost_estimate: float = 0.0
 
