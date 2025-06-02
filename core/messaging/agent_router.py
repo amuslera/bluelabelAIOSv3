@@ -6,7 +6,7 @@ including broadcast handling, load balancing, and failover routing.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from agents.base.types import AgentType, TaskType
 from core.orchestration.discovery import AgentDiscovery
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class AgentMessageRouter(MessageRouter):
     """
     Specialized message router for agent communication.
-    
+
     Features:
     - Agent-aware routing based on capabilities
     - Load balancing across available agents
@@ -45,16 +45,16 @@ class AgentMessageRouter(MessageRouter):
     async def route_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
-        recipient_id: Optional[str] = None,
+        recipient_id: str | None = None,
         message_type: str = "general",
         priority: int = 5,
         **kwargs
     ) -> RoutingDecision:
         """
         Route a message to the appropriate agent(s).
-        
+
         Args:
             routing_key: Original routing key
             payload: Message payload
@@ -62,7 +62,7 @@ class AgentMessageRouter(MessageRouter):
             recipient_id: ID of target agent (None for broadcast)
             message_type: Type of message
             priority: Message priority
-            
+
         Returns:
             RoutingDecision: Decision on how to route the message
         """
@@ -116,7 +116,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_direct_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         recipient_id: str,
         message_type: str,
@@ -169,7 +169,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_broadcast_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         message_type: str,
         priority: int,
@@ -207,7 +207,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_type_based_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         message_type: str,
         priority: int,
@@ -266,7 +266,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_capability_based_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         message_type: str,
         priority: int,
@@ -324,7 +324,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_task_message(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         message_type: str,
         priority: int,
@@ -389,7 +389,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_with_failover(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         original_recipient: str,
         message_type: str,
@@ -462,7 +462,7 @@ class AgentMessageRouter(MessageRouter):
     async def _route_default(
         self,
         routing_key: str,
-        payload: Dict[str, Any],
+        payload: dict[str, Any],
         sender_id: str,
         priority: int,
     ) -> RoutingDecision:

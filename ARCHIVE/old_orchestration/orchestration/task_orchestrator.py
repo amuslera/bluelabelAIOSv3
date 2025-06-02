@@ -17,7 +17,7 @@ import time
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import websockets
 
@@ -62,9 +62,9 @@ class SprintObjective:
     description: str
     priority: TaskPriority
     estimated_effort: int  # story points
-    acceptance_criteria: List[str]
-    dependencies: List[str]
-    assigned_epic: Optional[str] = None
+    acceptance_criteria: list[str]
+    dependencies: list[str]
+    assigned_epic: str | None = None
 
 
 @dataclass
@@ -77,18 +77,18 @@ class Task:
     priority: TaskPriority
     status: TaskStatus
     estimated_effort: int  # hours
-    assigned_to: Optional[str] = None
-    assigned_role: Optional[str] = None
-    parent_objective: Optional[str] = None
-    dependencies: List[str] = None
+    assigned_to: str | None = None
+    assigned_role: str | None = None
+    parent_objective: str | None = None
+    dependencies: list[str] = None
     created_at: float = None
-    assigned_at: Optional[float] = None
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    assigned_at: float | None = None
+    started_at: float | None = None
+    completed_at: float | None = None
     progress: int = 0  # 0-100%
-    blockers: List[str] = None
-    deliverables: List[str] = None
-    acceptance_criteria: List[str] = None
+    blockers: list[str] = None
+    deliverables: list[str] = None
+    acceptance_criteria: list[str] = None
 
     def __post_init__(self):
         if self.dependencies is None:
@@ -113,9 +113,9 @@ class Blocker:
     description: str
     impact: str  # How this affects the task/sprint
     escalated_to_human: bool = False
-    resolution_strategy: Optional[str] = None
+    resolution_strategy: str | None = None
     created_at: float = None
-    resolved_at: Optional[float] = None
+    resolved_at: float | None = None
 
     def __post_init__(self):
         if self.created_at is None:
@@ -128,10 +128,10 @@ class AgentCapability:
     agent_id: str
     role: str
     name: str
-    capabilities: List[TaskType]
+    capabilities: list[TaskType]
     current_workload: int  # number of active tasks
     max_workload: int = 3
-    expertise_level: Dict[str, int] = None  # domain -> skill level (1-10)
+    expertise_level: dict[str, int] = None  # domain -> skill level (1-10)
     availability: bool = True
     last_seen: float = None
 
@@ -156,18 +156,18 @@ class TaskOrchestrator:
         self.connected = False
 
         # Sprint and task management
-        self.current_sprint: Optional[str] = None
-        self.sprint_objectives: Dict[str, SprintObjective] = {}
-        self.tasks: Dict[str, Task] = {}
-        self.blockers: Dict[str, Blocker] = {}
+        self.current_sprint: str | None = None
+        self.sprint_objectives: dict[str, SprintObjective] = {}
+        self.tasks: dict[str, Task] = {}
+        self.blockers: dict[str, Blocker] = {}
 
         # Agent management
-        self.agents: Dict[str, AgentCapability] = {}
-        self.agent_assignments: Dict[str, Set[str]] = {}  # agent_id -> task_ids
+        self.agents: dict[str, AgentCapability] = {}
+        self.agent_assignments: dict[str, Set[str]] = {}  # agent_id -> task_ids
 
         # Human collaboration
-        self.human_id: Optional[str] = None
-        self.pending_escalations: List[str] = []
+        self.human_id: str | None = None
+        self.pending_escalations: list[str] = []
 
         # Orchestrator state
         self.orchestrator_id = f"orchestrator_{uuid.uuid4().hex[:8]}"
@@ -210,7 +210,7 @@ class TaskOrchestrator:
             logger.error(f"❌ Failed to connect orchestrator: {e}")
             self.connected = False
 
-    async def send_message(self, data: Dict[str, Any]):
+    async def send_message(self, data: dict[str, Any]):
         """Send message to collaboration server."""
         if self.websocket and self.connected:
             try:
@@ -234,7 +234,7 @@ class TaskOrchestrator:
             self.connected = False
             logger.warning("🔌 Orchestrator disconnected from collaboration server")
 
-    async def handle_collaboration_message(self, data: Dict[str, Any]):
+    async def handle_collaboration_message(self, data: dict[str, Any]):
         """Handle messages from collaboration server."""
         message_type = data.get("type")
 
@@ -251,7 +251,7 @@ class TaskOrchestrator:
         elif message_type == "status_updated":
             await self.handle_agent_status_update(data)
 
-    async def handle_agent_joined(self, data: Dict[str, Any]):
+    async def handle_agent_joined(self, data: dict[str, Any]):
         """Handle new agent joining the team."""
         collaborator = data.get("collaborator", {})
         agent_id = collaborator.get("id")
@@ -278,7 +278,7 @@ class TaskOrchestrator:
             logger.info(f"🤖 Agent joined team: {name} ({role})")
             await self.welcome_agent(agent_id, name, role)
 
-    async def handle_agent_left(self, data: Dict[str, Any]):
+    async def handle_agent_left(self, data: dict[str, Any]):
         """Handle agent leaving the team."""
         agent_id = data.get("collaborator_id")
         if agent_id in self.agents:
@@ -331,7 +331,7 @@ Ready to contribute to our sprint goals! 🚀""",
             "metadata": {"agent_welcome": True, "target_agent": agent_id}
         })
 
-    def _get_role_capabilities(self, role: str) -> List[TaskType]:
+    def _get_role_capabilities(self, role: str) -> list[TaskType]:
         """Get capabilities for agent role."""
         role_capabilities = {
             "cto": [TaskType.ARCHITECTURE, TaskType.ANALYSIS, TaskType.PLANNING, TaskType.REVIEW],
@@ -342,7 +342,7 @@ Ready to contribute to our sprint goals! 🚀""",
         }
         return role_capabilities.get(role, [TaskType.GENERAL])
 
-    def _get_role_expertise(self, role: str) -> Dict[str, int]:
+    def _get_role_expertise(self, role: str) -> dict[str, int]:
         """Get expertise levels for agent role."""
         role_expertise = {
             "cto": {"architecture": 9, "strategy": 9, "leadership": 8, "technology": 9},
@@ -483,7 +483,7 @@ This requires a product/business decision that's outside my technical scope. How
         if int(time.time()) % 1800 == 0:  # Every 30 minutes
             logger.info(f"📊 Sprint Progress: {completed_tasks}/{total_tasks} completed, {in_progress_tasks} in progress, {blocked_tasks} blocked")
 
-    async def handle_task_completion(self, data: Dict[str, Any]):
+    async def handle_task_completion(self, data: dict[str, Any]):
         """Handle task completion from agent."""
         task_id = data.get("task_id")
         from_id = data.get("from_id")
@@ -520,7 +520,7 @@ Checking for dependent tasks that can now be started... 🔄""",
             # Check for dependent tasks that can now be assigned
             await self._check_dependent_tasks(task_id)
 
-    async def handle_task_failure(self, data: Dict[str, Any]):
+    async def handle_task_failure(self, data: dict[str, Any]):
         """Handle task failure from agent."""
         task_id = data.get("task_id")
         from_id = data.get("from_id")
@@ -574,7 +574,7 @@ Don't worry - we'll get this resolved! What additional context can you provide?"
         if best_agent:
             await self.assign_task_to_agent(task.id, best_agent.agent_id)
 
-    def _find_best_agent_for_task(self, task: Task) -> Optional[AgentCapability]:
+    def _find_best_agent_for_task(self, task: Task) -> AgentCapability | None:
         """Find the best agent for a given task."""
         suitable_agents = []
 
@@ -659,7 +659,7 @@ This aligns with your expertise and current workload. Let me know if you need an
             "metadata": {"task_assignment": True, "task_id": task_id, "agent_id": agent_id}
         })
 
-    async def handle_team_message(self, data: Dict[str, Any]):
+    async def handle_team_message(self, data: dict[str, Any]):
         """Handle messages from team members."""
         message = data.get("message", {})
         from_name = data.get("from_name", "Unknown")

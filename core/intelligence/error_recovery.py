@@ -16,7 +16,7 @@ from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 import redis.asyncio as redis
 from redis.exceptions import RedisError
@@ -48,14 +48,14 @@ class ErrorPattern:
     """Represents a known error pattern."""
     pattern_id: str
     error_type: type[Exception]
-    message_pattern: Optional[str] = None
+    message_pattern: str | None = None
     severity: ErrorSeverity = ErrorSeverity.MEDIUM
     recovery_strategy: RecoveryStrategy = RecoveryStrategy.RETRY
     max_retries: int = 3
     backoff_base: float = 1.0
-    fallback_action: Optional[str] = None
+    fallback_action: str | None = None
     occurrence_count: int = 0
-    last_seen: Optional[float] = None
+    last_seen: float | None = None
     success_rate: float = 0.0
 
     def matches(self, error: Exception) -> bool:
@@ -75,11 +75,11 @@ class ErrorContext:
     """Context information for an error."""
     error: Exception
     agent_id: str
-    task_id: Optional[str] = None
-    operation: Optional[str] = None
+    task_id: str | None = None
+    operation: str | None = None
     timestamp: float = field(default_factory=time.time)
     stack_trace: str = field(default_factory=lambda: "")
-    additional_info: Dict[str, Any] = field(default_factory=dict)
+    additional_info: dict[str, Any] = field(default_factory=dict)
     retry_count: int = 0
 
     def __post_init__(self):
@@ -94,8 +94,8 @@ class RecoveryResult:
     strategy_used: RecoveryStrategy
     retry_count: int
     duration: float
-    result: Optional[Any] = None
-    error: Optional[Exception] = None
+    result: Any | None = None
+    error: Exception | None = None
 
 
 class ErrorRecoverySystem:
@@ -107,9 +107,9 @@ class ErrorRecoverySystem:
     def __init__(self, redis_url: str = "redis://localhost:6379"):
         self.redis_url = redis_url
         self.redis_client: redis.Optional[Redis] = None
-        self.error_patterns: Dict[str, ErrorPattern] = {}
-        self.error_history: Dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
-        self.circuit_breakers: Dict[str, CircuitBreaker] = {}
+        self.error_patterns: dict[str, ErrorPattern] = {}
+        self.error_history: dict[str, deque] = defaultdict(lambda: deque(maxlen=100))
+        self.circuit_breakers: dict[str, CircuitBreaker] = {}
         self._load_default_patterns()
 
     def _load_default_patterns(self):
@@ -216,7 +216,7 @@ class ErrorRecoverySystem:
         except RedisError as e:
             logger.error(f"Failed to persist pattern: {e}")
 
-    def identify_pattern(self, error_context: ErrorContext) -> Optional[ErrorPattern]:
+    def identify_pattern(self, error_context: ErrorContext) -> ErrorPattern | None:
         """Identify which error pattern matches the given error."""
         for pattern in self.error_patterns.values():
             if pattern.matches(error_context.error):
@@ -245,12 +245,12 @@ class ErrorRecoverySystem:
                      operation: Callable, *args, **kwargs) -> RecoveryResult:
         """
         Attempt to recover from an error by applying appropriate strategies.
-        
+
         Args:
             error_context: Context information about the error
             operation: The operation to retry/recover
             *args, **kwargs: Arguments for the operation
-            
+
         Returns:
             RecoveryResult with outcome information
         """
@@ -471,7 +471,7 @@ class ErrorRecoverySystem:
             "retry_count": error_context.retry_count
         })
 
-    def get_error_statistics(self, agent_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_error_statistics(self, agent_id: str | None = None) -> dict[str, Any]:
         """Get error statistics for analysis."""
         stats = {
             "total_errors": 0,

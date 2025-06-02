@@ -9,10 +9,9 @@ This agent focuses on:
 - Backend testing (unit and integration tests)
 """
 
-import json
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -53,7 +52,7 @@ class BackendAgentConfig(EnhancedAgentConfig):
 class BackendDeveloperAgent(EnhancedBaseAgent):
     """
     Backend Developer Agent for server-side development.
-    
+
     Specializes in:
     - FastAPI endpoint development and routing
     - SQLAlchemy model creation and database design
@@ -63,7 +62,7 @@ class BackendDeveloperAgent(EnhancedBaseAgent):
     - Error handling and validation
     """
 
-    def __init__(self, config: Optional[BackendAgentConfig] = None):
+    def __init__(self, config: BackendAgentConfig | None = None):
         """Initialize Backend Developer Agent with specialized configuration."""
         if config is None:
             config = BackendAgentConfig()
@@ -73,7 +72,7 @@ class BackendDeveloperAgent(EnhancedBaseAgent):
         # Backend-specific knowledge areas
         self.expertise_areas = [
             "fastapi",
-            "sqlalchemy", 
+            "sqlalchemy",
             "pydantic",
             "pytest",
             "uvicorn",
@@ -502,13 +501,13 @@ Base = declarative_base()
 
 class ModelName(Base):
     __tablename__ = "table_name"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Add model fields
-    
+
     def __repr__(self):
         return f"<ModelName(id={self.id})>"
 """
@@ -536,7 +535,7 @@ class SchemaResponse(SchemaBase):
     id: int
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         orm_mode = True
 """
@@ -554,11 +553,11 @@ class TestEndpoint:
     def test_successful_request(self):
         response = client.post("/endpoint", json={})
         assert response.status_code == 200
-        
+
     def test_invalid_request(self):
         response = client.post("/endpoint", json={"invalid": "data"})
         assert response.status_code == 422
-        
+
     def test_error_handling(self):
         # Test error conditions
         pass
@@ -575,20 +574,20 @@ from app.schemas import SchemaCreate, SchemaUpdate
 class ServiceName:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def create(self, obj_in: SchemaCreate) -> ModelName:
         db_obj = ModelName(**obj_in.dict())
         self.db.add(db_obj)
         self.db.commit()
         self.db.refresh(db_obj)
         return db_obj
-    
+
     def get(self, id: int) -> Optional[ModelName]:
         return self.db.query(ModelName).filter(ModelName.id == id).first()
-    
+
     def get_multi(self, skip: int = 0, limit: int = 100) -> List[ModelName]:
         return self.db.query(ModelName).offset(skip).limit(limit).all()
-    
+
     def update(self, id: int, obj_in: SchemaUpdate) -> Optional[ModelName]:
         db_obj = self.get(id)
         if db_obj:
@@ -597,7 +596,7 @@ class ServiceName:
             self.db.commit()
             self.db.refresh(db_obj)
         return db_obj
-    
+
     def delete(self, id: int) -> bool:
         db_obj = self.get(id)
         if db_obj:
@@ -609,7 +608,7 @@ class ServiceName:
 
 
 # Factory function for easy Backend Agent creation
-async def create_backend_agent(custom_config: Optional[Dict[str, Any]] = None) -> BackendDeveloperAgent:
+async def create_backend_agent(custom_config: dict[str, Any] | None = None) -> BackendDeveloperAgent:
     """Create and initialize a Backend Developer Agent with optional custom configuration."""
 
     config_params = custom_config or {}
@@ -623,13 +622,13 @@ async def create_backend_agent(custom_config: Optional[Dict[str, Any]] = None) -
 
 # Example usage and testing
 if __name__ == "__main__":
-    
+
     async def test_backend_agent():
         """Test Backend Developer Agent functionality."""
-        
+
         # Create Backend Agent
         backend = await create_backend_agent()
-        
+
         # Test API development task
         api_task = EnhancedTask(
             task_type=TaskType.CODE_GENERATION,
@@ -642,7 +641,7 @@ if __name__ == "__main__":
                 "security": "password hashing required"
             }
         )
-        
+
         print("🚀 Testing Backend Agent - API Development")
         result = await backend.process_task(api_task)
         print(f"Success: {result.success}")
@@ -651,14 +650,14 @@ if __name__ == "__main__":
         print(f"Model used: {result.model_used}")
         print("\n" + "="*80)
         print(result.output[:1000] + "..." if len(result.output) > 1000 else result.output)
-        
+
         # Get agent status
         status = backend.get_status()
         print("\n📊 Backend Agent Status:")
         print(f"Tasks completed: {status['tasks_completed']}")
         print(f"Success rate: {status['success_rate']:.1%}")
         print(f"Total cost: ${status['total_cost']:.4f}")
-        
+
         await backend.stop()
 
     # Run test

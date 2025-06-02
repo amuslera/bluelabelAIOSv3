@@ -8,9 +8,8 @@ import asyncio
 import sys
 from pathlib import Path
 
-from rich.console import Console
-
 from enhanced_theatrical_agent import TheatricalAgent
+from rich.console import Console
 
 console = Console()
 

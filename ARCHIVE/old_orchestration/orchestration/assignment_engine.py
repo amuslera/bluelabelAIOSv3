@@ -10,15 +10,16 @@ import logging
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
-from agents.base.types import TaskType
 from orchestration.task_orchestrator import (
     AgentCapability,
     Task,
     TaskPriority,
     TaskStatus,
 )
+
+from agents.base.types import TaskType
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class WorkloadMetrics:
     estimated_hours: float
     utilization_percentage: float
     capacity_remaining: int
-    projected_completion: Optional[float]
+    projected_completion: float | None
 
 
 class AssignmentEngine:
@@ -68,17 +69,17 @@ class AssignmentEngine:
     """
 
     def __init__(self):
-        self.assignment_history: Dict[str, List[str]] = {}  # agent_id -> task_ids
-        self.performance_metrics: Dict[str, Dict[str, float]] = {}  # agent_id -> metrics
-        self.collaboration_patterns: Dict[str, Set[str]] = {}  # agent_id -> collaborator_ids
+        self.assignment_history: dict[str, list[str]] = {}  # agent_id -> task_ids
+        self.performance_metrics: dict[str, dict[str, float]] = {}  # agent_id -> metrics
+        self.collaboration_patterns: dict[str, Set[str]] = {}  # agent_id -> collaborator_ids
 
     def find_best_assignment(
         self,
         task: Task,
-        available_agents: Dict[str, AgentCapability],
-        current_tasks: Dict[str, Task],
+        available_agents: dict[str, AgentCapability],
+        current_tasks: dict[str, Task],
         strategy: AssignmentStrategy = AssignmentStrategy.HYBRID
-    ) -> Optional[AssignmentScore]:
+    ) -> AssignmentScore | None:
         """
         Find the best agent assignment for a given task.
         
@@ -121,8 +122,8 @@ class AssignmentEngine:
     def _filter_capable_agents(
         self,
         task: Task,
-        available_agents: Dict[str, AgentCapability]
-    ) -> Dict[str, AgentCapability]:
+        available_agents: dict[str, AgentCapability]
+    ) -> dict[str, AgentCapability]:
         """Filter agents that can handle the task type."""
         capable = {}
 
@@ -147,7 +148,7 @@ class AssignmentEngine:
         self,
         task: Task,
         agent: AgentCapability,
-        current_tasks: Dict[str, Task],
+        current_tasks: dict[str, Task],
         strategy: AssignmentStrategy
     ) -> AssignmentScore:
         """Calculate comprehensive assignment score for agent."""
@@ -248,7 +249,7 @@ class AssignmentEngine:
     def _calculate_workload_score(
         self,
         agent: AgentCapability,
-        current_tasks: Dict[str, Task]
+        current_tasks: dict[str, Task]
     ) -> float:
         """Calculate score based on agent's current workload."""
 
@@ -271,7 +272,7 @@ class AssignmentEngine:
     def _calculate_workload_metrics(
         self,
         agent: AgentCapability,
-        current_tasks: Dict[str, Task]
+        current_tasks: dict[str, Task]
     ) -> WorkloadMetrics:
         """Calculate detailed workload metrics for agent."""
 
@@ -333,7 +334,7 @@ class AssignmentEngine:
         self,
         task: Task,
         agent: AgentCapability,
-        current_tasks: Dict[str, Task]
+        current_tasks: dict[str, Task]
     ) -> float:
         """Calculate score based on task dependencies and agent relationships."""
         score = 50.0  # Base score
@@ -520,10 +521,10 @@ class AssignmentEngine:
 
     def get_assignment_recommendations(
         self,
-        tasks: List[Task],
-        available_agents: Dict[str, AgentCapability],
-        current_tasks: Dict[str, Task]
-    ) -> List[Tuple[Task, AssignmentScore]]:
+        tasks: list[Task],
+        available_agents: dict[str, AgentCapability],
+        current_tasks: dict[str, Task]
+    ) -> list[tuple[Task, AssignmentScore]]:
         """Get assignment recommendations for multiple tasks."""
 
         recommendations = []
@@ -540,7 +541,7 @@ class AssignmentEngine:
 
         return recommendations
 
-    def _sort_tasks_for_assignment(self, tasks: List[Task]) -> List[Task]:
+    def _sort_tasks_for_assignment(self, tasks: list[Task]) -> list[Task]:
         """Sort tasks for optimal assignment order."""
         # Priority order: CRITICAL > HIGH > MEDIUM > LOW
         priority_order = {
@@ -560,9 +561,9 @@ class AssignmentEngine:
 
 # Utility functions for task assignment analysis
 def analyze_team_capacity(
-    agents: Dict[str, AgentCapability],
-    current_tasks: Dict[str, Task]
-) -> Dict[str, Any]:
+    agents: dict[str, AgentCapability],
+    current_tasks: dict[str, Task]
+) -> dict[str, Any]:
     """Analyze overall team capacity and utilization."""
 
     total_agents = len(agents)

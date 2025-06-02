@@ -6,7 +6,6 @@ import asyncio
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from textual import on
 from textual.app import ComposeResult
@@ -40,7 +39,7 @@ class Task:
     title: str
     description: str
     status: TaskStatus
-    assigned_to: Optional[str] = None
+    assigned_to: str | None = None
     priority: str = "medium"
 
     def get_status_display(self) -> str:
@@ -50,7 +49,7 @@ class Task:
 class AssignTaskDialog(ModalScreen):
     """Modal dialog for task assignment."""
 
-    def __init__(self, task: Task, agents: List[str], **kwargs):
+    def __init__(self, task: Task, agents: list[str], **kwargs):
         super().__init__(**kwargs)
         self.task = task
         self.agents = agents
@@ -88,7 +87,7 @@ class AssignTaskDialog(ModalScreen):
 class TaskManagerPanel(Widget):
     """Panel for managing sprint tasks."""
 
-    tasks: reactive[Dict[str, Task]] = reactive({})
+    tasks: reactive[dict[str, Task]] = reactive({})
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -177,7 +176,7 @@ class TaskManagerPanel(Widget):
 
         for task in self.tasks.values():
             # Style based on status
-            status_class = f"task-{task.status.value.replace('_', '-')}"
+            f"task-{task.status.value.replace('_', '-')}"
 
             table.add_row(
                 task.id,

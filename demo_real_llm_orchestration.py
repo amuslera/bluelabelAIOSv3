@@ -11,16 +11,25 @@ import logging
 import os
 import time
 from datetime import datetime
+
 from dotenv import load_dotenv
 
-from core.routing.providers import ClaudeProvider, ClaudeConfig, OpenAIProvider, OpenAIConfig
-from core.routing.router import LLMRouter, RoutingPolicy, RoutingStrategy
-from agents.specialists.backend_agent import BackendDeveloperAgent, BackendAgentConfig
-from agents.specialists.frontend_agent import FrontendDeveloperAgent, FrontendAgentConfig
-from agents.specialists.qa_agent import QAEngineerAgent, QAAgentConfig
-from agents.specialists.devops_agent import DevOpsEngineerAgent, DevOpsAgentConfig
 from agents.base.enhanced_agent import EnhancedTask
-from agents.base.types import TaskType, Priority
+from agents.base.types import Priority, TaskType
+from agents.specialists.backend_agent import BackendAgentConfig, BackendDeveloperAgent
+from agents.specialists.devops_agent import DevOpsAgentConfig, DevOpsEngineerAgent
+from agents.specialists.frontend_agent import (
+    FrontendAgentConfig,
+    FrontendDeveloperAgent,
+)
+from agents.specialists.qa_agent import QAAgentConfig, QAEngineerAgent
+from core.routing.providers import (
+    ClaudeConfig,
+    ClaudeProvider,
+    OpenAIConfig,
+    OpenAIProvider,
+)
+from core.routing.router import LLMRouter, RoutingPolicy, RoutingStrategy
 
 # Load environment variables
 load_dotenv()
@@ -51,7 +60,7 @@ class RealLLMOrchestrationDemo:
     async def setup_infrastructure(self) -> None:
         """Set up LLM router and agents with real providers."""
         logger.info("🚀 Setting up Real LLM Infrastructure...")
-        
+
         # Initialize router with cost-optimized strategy
         self.router = LLMRouter(
             default_policy=RoutingPolicy(
@@ -91,12 +100,12 @@ class RealLLMOrchestrationDemo:
 
         # Setup agents
         await self._setup_agents()
-        
+
         logger.info("🎯 Real LLM Infrastructure Ready!")
 
     async def _setup_agents(self) -> None:
         """Setup all specialist agents."""
-        
+
         # Backend Developer Agent
         backend_config = BackendAgentConfig()
         self.agents["backend"] = BackendDeveloperAgent(backend_config)
@@ -130,16 +139,16 @@ class RealLLMOrchestrationDemo:
 
         # Phase 1: CTO Specification (Claude as CTO)
         await self._phase1_specification()
-        
+
         # Phase 2: Backend Development
         await self._phase2_backend_development()
-        
+
         # Phase 3: Frontend Development
         await self._phase3_frontend_development()
-        
+
         # Phase 4: QA Testing
         await self._phase4_qa_testing()
-        
+
         # Phase 5: DevOps Deployment
         await self._phase5_devops_deployment()
 
@@ -187,8 +196,8 @@ class RealLLMOrchestrationDemo:
 
         self.artifacts["specification"] = specification
         self.metrics["phase_times"]["specification"] = time.time() - phase_start
-        
-        logger.info(f"✅ Phase 1 Complete: Technical specification created")
+
+        logger.info("✅ Phase 1 Complete: Technical specification created")
         logger.info(f"   Time: {self.metrics['phase_times']['specification']:.2f}s")
 
     async def _phase2_backend_development(self) -> None:
@@ -222,12 +231,12 @@ Be comprehensive but production-ready.""",
         )
 
         result = await self.agents["backend"].process_task(task)
-        
+
         self.artifacts["backend_code"] = result.output
         self._update_metrics(result)
         self.metrics["phase_times"]["backend"] = time.time() - phase_start
 
-        logger.info(f"✅ Phase 2 Complete: Backend implementation ready")
+        logger.info("✅ Phase 2 Complete: Backend implementation ready")
         logger.info(f"   Time: {self.metrics['phase_times']['backend']:.2f}s")
         logger.info(f"   Tokens: {result.tokens_used}, Cost: ${result.cost:.4f}")
         logger.info(f"   Provider: {result.provider_used}/{result.model_used}")
@@ -267,12 +276,12 @@ Make it production-ready with proper TypeScript types and error boundaries.""",
         )
 
         result = await self.agents["frontend"].process_task(task)
-        
+
         self.artifacts["frontend_code"] = result.output
         self._update_metrics(result)
         self.metrics["phase_times"]["frontend"] = time.time() - phase_start
 
-        logger.info(f"✅ Phase 3 Complete: Frontend implementation ready")
+        logger.info("✅ Phase 3 Complete: Frontend implementation ready")
         logger.info(f"   Time: {self.metrics['phase_times']['frontend']:.2f}s")
         logger.info(f"   Tokens: {result.tokens_used}, Cost: ${result.cost:.4f}")
         logger.info(f"   Provider: {result.provider_used}/{result.model_used}")
@@ -284,7 +293,7 @@ Make it production-ready with proper TypeScript types and error boundaries.""",
 
         task = EnhancedTask(
             task_type=TaskType.TESTING,
-            prompt=f"""Create comprehensive tests for the Todo application.
+            prompt="""Create comprehensive tests for the Todo application.
 
 Application Components:
 - Backend: FastAPI with SQLAlchemy
@@ -314,12 +323,12 @@ Include test setup, fixtures, and coverage configuration. Target 80% coverage.""
         )
 
         result = await self.agents["qa"].process_task(task)
-        
+
         self.artifacts["test_suite"] = result.output
         self._update_metrics(result)
         self.metrics["phase_times"]["testing"] = time.time() - phase_start
 
-        logger.info(f"✅ Phase 4 Complete: Test suite ready")
+        logger.info("✅ Phase 4 Complete: Test suite ready")
         logger.info(f"   Time: {self.metrics['phase_times']['testing']:.2f}s")
         logger.info(f"   Tokens: {result.tokens_used}, Cost: ${result.cost:.4f}")
         logger.info(f"   Provider: {result.provider_used}/{result.model_used}")
@@ -331,7 +340,7 @@ Include test setup, fixtures, and coverage configuration. Target 80% coverage.""
 
         task = EnhancedTask(
             task_type=TaskType.DEPLOYMENT,
-            prompt=f"""Create complete deployment configuration for the Todo application.
+            prompt="""Create complete deployment configuration for the Todo application.
 
 Application Stack:
 - Backend: FastAPI (Python)
@@ -368,12 +377,12 @@ Include production-ready security best practices and scalability considerations.
         )
 
         result = await self.agents["devops"].process_task(task)
-        
+
         self.artifacts["deployment_config"] = result.output
         self._update_metrics(result)
         self.metrics["phase_times"]["deployment"] = time.time() - phase_start
 
-        logger.info(f"✅ Phase 5 Complete: Deployment configuration ready")
+        logger.info("✅ Phase 5 Complete: Deployment configuration ready")
         logger.info(f"   Time: {self.metrics['phase_times']['deployment']:.2f}s")
         logger.info(f"   Tokens: {result.tokens_used}, Cost: ${result.cost:.4f}")
         logger.info(f"   Provider: {result.provider_used}/{result.model_used}")
@@ -382,7 +391,7 @@ Include production-ready security best practices and scalability considerations.
         """Update orchestration metrics."""
         self.metrics["total_tokens"] += result.tokens_used
         self.metrics["total_cost"] += result.cost
-        
+
         provider = result.provider_used
         if provider in self.metrics["provider_usage"]:
             self.metrics["provider_usage"][provider]["requests"] += 1
@@ -398,22 +407,22 @@ Include production-ready security best practices and scalability considerations.
     async def _print_orchestration_summary(self) -> None:
         """Print comprehensive orchestration summary."""
         total_time = time.time() - self.metrics["start_time"]
-        
+
         logger.info("\\n" + "="*70)
         logger.info("🎉 MULTI-AGENT ORCHESTRATION COMPLETE!")
         logger.info("="*70)
-        
+
         # Overall metrics
         logger.info(f"⏱️  Total Time: {total_time:.2f} seconds")
         logger.info(f"🪙 Total Tokens: {self.metrics['total_tokens']:,}")
         logger.info(f"💰 Total Cost: ${self.metrics['total_cost']:.4f}")
-        
+
         # Phase breakdown
         logger.info("\\n📊 Phase Breakdown:")
         for phase, phase_time in self.metrics["phase_times"].items():
             percentage = (phase_time / total_time) * 100
             logger.info(f"   {phase.title()}: {phase_time:.2f}s ({percentage:.1f}%)")
-        
+
         # Provider usage
         logger.info("\\n🔧 Provider Usage:")
         for provider, usage in self.metrics["provider_usage"].items():
@@ -421,7 +430,7 @@ Include production-ready security best practices and scalability considerations.
             logger.info(f"     Requests: {usage['requests']}")
             logger.info(f"     Tokens: {usage['tokens']:,}")
             logger.info(f"     Cost: ${usage['cost']:.4f}")
-        
+
         # Artifacts generated
         logger.info("\\n📄 Artifacts Generated:")
         for artifact_name, artifact_content in self.artifacts.items():
@@ -430,14 +439,14 @@ Include production-ready security best practices and scalability considerations.
                 logger.info(f"   {artifact_name.title()}: {size:,} characters")
             else:
                 logger.info(f"   {artifact_name.title()}: Structured data")
-        
+
         # Total code generated
         total_code_size = sum(
-            len(content) for content in self.artifacts.values() 
+            len(content) for content in self.artifacts.values()
             if isinstance(content, str)
         )
         logger.info(f"\\n📦 Total Code Generated: {total_code_size:,} characters ({total_code_size/1024:.1f}KB)")
-        
+
         # Performance summary
         logger.info("\\n⚡ Performance Summary:")
         logger.info(f"   Code generation rate: {total_code_size/total_time:.0f} chars/second")
@@ -453,15 +462,15 @@ Include production-ready security best practices and scalability considerations.
             if stats.get("requests", 0) > 0:
                 success_rate = (stats.get("successes", 0) / stats["requests"]) * 100
             logger.info(f"   {provider_name}: {success_rate:.1f}% success rate")
-        
+
         logger.info("\\n🚀 REAL LLM MULTI-AGENT ORCHESTRATION SUCCESS!")
 
     async def save_artifacts(self) -> None:
         """Save all generated artifacts to files."""
         logger.info("\\n💾 Saving artifacts...")
-        
+
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         for artifact_name, content in self.artifacts.items():
             if isinstance(content, str):
                 filename = f"todo_app_{artifact_name}_{timestamp}.md"
@@ -469,7 +478,7 @@ Include production-ready security best practices and scalability considerations.
                     f.write(f"# {artifact_name.title()}\\n\\n")
                     f.write(content)
                 logger.info(f"   💾 Saved {filename} ({len(content):,} chars)")
-        
+
         logger.info("✅ All artifacts saved successfully!")
 
     async def cleanup(self) -> None:
@@ -482,23 +491,23 @@ Include production-ready security best practices and scalability considerations.
 async def main():
     """Main orchestration function."""
     logger.info("🚀 Real LLM Multi-Agent Orchestration Demo Starting...")
-    
+
     demo = RealLLMOrchestrationDemo()
-    
+
     try:
         # Setup infrastructure
         await demo.setup_infrastructure()
-        
+
         # Run orchestration
         await demo.orchestrate_todo_app()
-        
+
         # Save artifacts
         await demo.save_artifacts()
-        
+
     except Exception as e:
         logger.error(f"Orchestration failed: {e}")
         raise
-    
+
     finally:
         # Cleanup
         await demo.cleanup()

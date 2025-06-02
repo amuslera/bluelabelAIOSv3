@@ -5,7 +5,7 @@ Provides configuration for LLM providers and routing strategies.
 """
 
 import os
-from typing import Any, Dict
+from typing import Any
 
 from core.routing.providers.claude import ClaudeConfig
 from core.routing.router import RoutingStrategy
@@ -31,7 +31,7 @@ def get_claude_config() -> ClaudeConfig:
     )
 
 
-def get_llm_routing_config() -> Dict[str, Any]:
+def get_llm_routing_config() -> dict[str, Any]:
     """Get LLM routing configuration."""
     return {
         "providers": {
@@ -74,7 +74,7 @@ PRODUCTION_CONFIG = {
 }
 
 
-def get_config(environment: str = "development") -> Dict[str, Any]:
+def get_config(environment: str = "development") -> dict[str, Any]:
     """Get configuration for the specified environment."""
     configs = {
         "development": DEVELOPMENT_CONFIG,

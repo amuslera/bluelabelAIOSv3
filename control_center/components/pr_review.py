@@ -8,7 +8,7 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 from textual import on
 from textual.app import ComposeResult
@@ -27,7 +27,7 @@ class PullRequest:
     author: str
     branch: str
     description: str
-    files_changed: List[str]
+    files_changed: list[str]
     created_at: str
 
     @classmethod
@@ -85,11 +85,11 @@ class DiffViewerDialog(ModalScreen):
 class PRReviewPanel(Widget):
     """Panel for reviewing pull requests."""
 
-    current_pr: reactive[Optional[PullRequest]] = reactive(None)
+    current_pr: reactive[PullRequest | None] = reactive(None)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.pr_files: List[Path] = []
+        self.pr_files: list[Path] = []
 
     def compose(self) -> ComposeResult:
         """Create the panel layout."""

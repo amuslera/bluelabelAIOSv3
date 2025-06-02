@@ -17,7 +17,7 @@ import asyncio
 import os
 import sys
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -38,8 +38,8 @@ class WorkflowOrchestrator:
     """Orchestrates multi-agent workflows for development tasks."""
 
     def __init__(self):
-        self.agents: Dict[str, Any] = {}
-        self.workflow_history: List[Dict[str, Any]] = []
+        self.agents: dict[str, Any] = {}
+        self.workflow_history: list[dict[str, Any]] = []
         self.total_cost = 0.0
 
     async def setup_agents(self):
@@ -109,7 +109,7 @@ class WorkflowOrchestrator:
         print("=" * 80)
         print()
 
-    def print_message(self, speaker: str, message: str, metadata: Dict[str, Any] = None):
+    def print_message(self, speaker: str, message: str, metadata: dict[str, Any] = None):
         """Print formatted workflow message."""
         timestamp = datetime.now().strftime("%H:%M:%S")
 

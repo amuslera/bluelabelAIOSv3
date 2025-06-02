@@ -10,7 +10,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +44,7 @@ class RecoveryPolicy(BaseModel):
     """Policy for recovery decisions."""
 
     enabled: bool = True
-    strategies: List[RecoveryStrategy] = Field(
+    strategies: list[RecoveryStrategy] = Field(
         default_factory=lambda: [RecoveryStrategy.RETRY, RecoveryStrategy.RESTART]
     )
     max_recovery_attempts: int = 3
@@ -62,8 +62,8 @@ class RecoveryCheckpoint(BaseModel):
     checkpoint_id: str
     agent_id: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    state: Dict[str, Any]
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    state: dict[str, Any]
+    metadata: dict[str, Any] = Field(default_factory=dict)
     valid_until: Optional[datetime] = None
 
 
@@ -81,13 +81,13 @@ class RecoveryManager:
         self.policy = policy or RecoveryPolicy()
 
         # Recovery state
-        self._recovery_history: List[RecoveryAction] = []
-        self._error_timestamps: List[datetime] = []
+        self._recovery_history: list[RecoveryAction] = []
+        self._error_timestamps: list[datetime] = []
         self._recovery_in_progress = False
         self._last_checkpoint: Optional[RecoveryCheckpoint] = None
 
         # Recovery callbacks
-        self._recovery_callbacks: Dict[RecoveryStrategy, List[Callable]] = {
+        self._recovery_callbacks: dict[RecoveryStrategy, list[Callable]] = {
             strategy: [] for strategy in RecoveryStrategy
         }
 
@@ -226,7 +226,7 @@ class RecoveryManager:
         return len(self._error_timestamps) >= self.policy.error_threshold
 
     def _select_recovery_strategy(
-        self, error: Exception, context: Optional[Dict[str, Any]]
+        self, error: Exception, context: dict[str, Any] = None
     ) -> Optional[RecoveryStrategy]:
         """Select appropriate recovery strategy."""
         # Check available strategies
@@ -427,7 +427,7 @@ class RecoveryManager:
 
         return True
 
-    def get_recovery_stats(self) -> Dict[str, Any]:
+    def get_recovery_stats(self) -> dict[str, Any]:
         """Get recovery statistics."""
         total_recoveries = len(self._recovery_history)
         successful_recoveries = sum(1 for a in self._recovery_history if a.success)

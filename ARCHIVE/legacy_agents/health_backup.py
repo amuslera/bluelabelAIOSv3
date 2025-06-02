@@ -10,7 +10,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import psutil
 from pydantic import BaseModel, Field
@@ -35,10 +35,10 @@ class HealthMetric(BaseModel):
     value: Any
     status: HealthStatus
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    threshold_min: Optional[float] = None
-    threshold_max: Optional[float] = None
-    unit: Optional[str] = None
-    message: Optional[str] = None
+    threshold_min: float | None = None
+    threshold_max: float | None = None
+    unit: str | None = None
+    message: str | None = None
 
 
 class HealthCheck(BaseModel):
@@ -51,8 +51,8 @@ class HealthCheck(BaseModel):
     critical: bool = False  # If True, failure affects overall health
     enabled: bool = True
     retry_count: int = 3
-    last_run: Optional[datetime] = None
-    last_result: Optional[HealthStatus] = None
+    last_run: datetime | None = None
+    last_result: HealthStatus | None = None
 
 
 class ComponentHealth(BaseModel):
@@ -60,9 +60,9 @@ class ComponentHealth(BaseModel):
 
     component_name: str
     status: HealthStatus
-    checks: Dict[str, HealthMetric]
+    checks: dict[str, HealthMetric]
     last_update: datetime = Field(default_factory=datetime.utcnow)
-    message: Optional[str] = None
+    message: str | None = None
 
 
 class AgentHealthReport(BaseModel):
@@ -70,8 +70,8 @@ class AgentHealthReport(BaseModel):
 
     agent_id: str
     overall_status: HealthStatus
-    components: Dict[str, ComponentHealth]
-    metrics: Dict[str, HealthMetric]
+    components: dict[str, ComponentHealth]
+    metrics: dict[str, HealthMetric]
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     uptime_seconds: float
     error_count: int = 0
@@ -89,10 +89,10 @@ class HealthMonitor:
     def __init__(self, agent_id: str):
         """Initialize health monitor."""
         self.agent_id = agent_id
-        self._health_checks: Dict[str, HealthCheck] = {}
-        self._check_functions: Dict[str, Callable] = {}
-        self._metrics: Dict[str, HealthMetric] = {}
-        self._component_status: Dict[str, ComponentHealth] = {}
+        self._health_checks: dict[str, HealthCheck] = {}
+        self._check_functions: dict[str, Callable] = {}
+        self._metrics: dict[str, HealthMetric] = {}
+        self._component_status: dict[str, ComponentHealth] = {}
 
         # Monitoring state
         self._monitoring_active = False
@@ -102,12 +102,12 @@ class HealthMonitor:
         # Error tracking
         self._error_count = 0
         self._warning_count = 0
-        self._consecutive_failures: Dict[str, int] = {}
+        self._consecutive_failures: dict[str, int] = {}
 
         # Resource monitoring
         self._process = psutil.Process()
-        self._cpu_percent_history: List[float] = []
-        self._memory_history: List[float] = []
+        self._cpu_percent_history: list[float] = []
+        self._memory_history: list[float] = []
 
         # Register default health checks
         self._register_default_checks()
@@ -199,8 +199,8 @@ class HealthMonitor:
         )
 
     async def check_health(
-        self, check_name: Optional[str] = None
-    ) -> Dict[str, HealthMetric]:
+        self, check_name: str | None = None
+    ) -> dict[str, HealthMetric]:
         """Run health checks and return results."""
         if check_name:
             # Run specific check
@@ -264,7 +264,7 @@ class HealthMonitor:
             logger.error(f"Error in monitoring loop for agent {self.agent_id}: {e}")
             self._error_count += 1
 
-    async def _run_check(self, check_name: str) -> Optional[HealthMetric]:
+    async def _run_check(self, check_name: str) -> HealthMetric | None:
         """Run a single health check."""
         check = self._health_checks.get(check_name)
         check_func = self._check_functions.get(check_name)
@@ -473,7 +473,7 @@ class HealthMonitor:
                 component.checks = component_checks
                 component.last_update = datetime.utcnow()
 
-    def get_metrics_summary(self) -> Dict[str, Any]:
+    def get_metrics_summary(self) -> dict[str, Any]:
         """Get summary of collected metrics."""
         return {
             "agent_id": self.agent_id,

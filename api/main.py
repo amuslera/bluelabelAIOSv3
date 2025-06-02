@@ -6,7 +6,7 @@ Provides REST API endpoints for interacting with agents.
 import logging
 import os
 from contextlib import asynccontextmanager
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import uvicorn
 from dotenv import load_dotenv
@@ -87,7 +87,7 @@ class TaskRequest(BaseModel):
 
     type: str
     description: str
-    parameters: Dict[str, Any] = {}
+    parameters: dict[str, Any] = {}
     priority: int = 5
     complexity: int = 5
     requires_privacy: bool = False
@@ -99,8 +99,8 @@ class TaskResponse(BaseModel):
     task_id: str
     agent_id: str
     status: str
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
     execution_time: float
     model_used: str
     cost_estimate: float
@@ -112,7 +112,7 @@ class AgentStatus(BaseModel):
     id: str
     name: str
     is_active: bool
-    capabilities: List[str]
+    capabilities: list[str]
     tasks_completed: int
 
 
@@ -120,7 +120,7 @@ class ChatMessage(BaseModel):
     """Model for chat messages with the CTO."""
 
     message: str
-    context: Dict[str, Any] = {}
+    context: dict[str, Any] = {}
 
 
 class ChatResponse(BaseModel):
@@ -128,8 +128,8 @@ class ChatResponse(BaseModel):
 
     response: str
     agent_id: str
-    suggestions: List[str] = []
-    follow_up_actions: List[str] = []
+    suggestions: list[str] = []
+    follow_up_actions: list[str] = []
 
 
 # Dependency to get agents
@@ -160,7 +160,7 @@ async def health_check():
     }
 
 
-@app.get("/agents", response_model=List[AgentStatus])
+@app.get("/agents", response_model=list[AgentStatus])
 async def list_agents():
     """List all available agents."""
     return [
@@ -275,7 +275,7 @@ async def chat_with_cto(message: ChatMessage):
 
 
 @app.post("/cto/project-plan")
-async def create_project_plan(project_request: Dict[str, Any]):
+async def create_project_plan(project_request: dict[str, Any]):
     """Request CTO to create a project plan."""
 
     cto_agent = get_agent("cto")
@@ -305,7 +305,7 @@ async def create_project_plan(project_request: Dict[str, Any]):
 
 
 @app.post("/cto/architecture")
-async def design_architecture(architecture_request: Dict[str, Any]):
+async def design_architecture(architecture_request: dict[str, Any]):
     """Request CTO to design system architecture."""
 
     cto_agent = get_agent("cto")

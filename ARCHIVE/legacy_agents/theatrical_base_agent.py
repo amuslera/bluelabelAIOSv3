@@ -12,7 +12,7 @@ import subprocess
 import time
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 
 # Define agent capabilities
@@ -89,7 +89,7 @@ class TheatricalBaseAgent:
     Full agent implementation with theatrical features.
     """
 
-    def __init__(self, agent_id: str, name: str, capabilities: List[str],
+    def __init__(self, agent_id: str, name: str, capabilities: list[str],
                  llm_config: dict, knowledge_base: dict = None):
         """Initialize theatrical agent with real capabilities."""
         self.agent_id = agent_id
@@ -170,7 +170,7 @@ class TheatricalBaseAgent:
         print(self.reset)
         await asyncio.sleep(0.5)
 
-    async def show_progress(self, task_name: str, steps: List[str],
+    async def show_progress(self, task_name: str, steps: list[str],
                           current_step: int = None):
         """Show progress through task steps."""
         if not self.enable_theatrical:
@@ -245,7 +245,7 @@ class TheatricalBaseAgent:
         self.print_colored("```")
         await asyncio.sleep(1)
 
-    async def show_decision_making(self, decision: str, options: List[Dict[str, Any]],
+    async def show_decision_making(self, decision: str, options: list[dict[str, Any]],
                                  choice: str, reasoning: str):
         """Show decision-making process."""
         if not self.enable_theatrical:
@@ -271,7 +271,7 @@ class TheatricalBaseAgent:
         await self.type_message(reasoning, prefix="  📋")
         await asyncio.sleep(1)
 
-    async def execute_task(self, task: Dict[str, Any]) -> Dict[str, Any]:
+    async def execute_task(self, task: dict[str, Any]) -> dict[str, Any]:
         """Execute task with theatrical narration."""
         task_desc = task.get('description', 'Unknown task')
 
@@ -366,7 +366,7 @@ class TheatricalBaseAgent:
             self.step_delay *= pacing_multiplier
 
 # Example of how to create a theatrical agent
-def create_theatrical_agent(role: str, capabilities: List[str],
+def create_theatrical_agent(role: str, capabilities: list[str],
                           llm_config: dict) -> TheatricalBaseAgent:
     """Factory function to create theatrical agents."""
     agent_id = f"{role}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

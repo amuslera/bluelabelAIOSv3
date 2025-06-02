@@ -9,7 +9,7 @@ import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -55,24 +55,24 @@ class MemoryEntry(BaseModel):
 
     # Context information
     agent_id: str
-    session_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    task_id: Optional[str] = None
+    session_id: str | None = None
+    conversation_id: str | None = None
+    task_id: str | None = None
 
     # Temporal information
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     accessed_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
     # Semantic information
-    keywords: List[str] = Field(default_factory=list)
-    categories: List[str] = Field(default_factory=list)
-    embedding: Optional[List[float]] = None
+    keywords: list[str] = Field(default_factory=list)
+    categories: list[str] = Field(default_factory=list)
+    embedding: list[float] | None = None
 
     # Metadata
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    source: Optional[str] = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    source: str | None = None
     confidence: float = 1.0  # 0.0-1.0 confidence in memory accuracy
 
     def update_access_time(self) -> None:
@@ -88,7 +88,7 @@ class ConversationContext(BaseModel):
     session_id: str
 
     # Message history
-    messages: List[Dict[str, Any]] = Field(default_factory=list)
+    messages: list[dict[str, Any]] = Field(default_factory=list)
     total_messages: int = 0
 
     # Token management
@@ -97,19 +97,19 @@ class ConversationContext(BaseModel):
     compression_threshold: int = 24576  # 75% of max
 
     # Context state
-    current_topic: Optional[str] = None
-    active_tasks: List[str] = Field(default_factory=list)
-    mentioned_entities: List[str] = Field(default_factory=list)
+    current_topic: str | None = None
+    active_tasks: list[str] = Field(default_factory=list)
+    mentioned_entities: list[str] = Field(default_factory=list)
 
     # Temporal tracking
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_activity: datetime = Field(default_factory=datetime.utcnow)
 
     # Memory links
-    related_memories: List[str] = Field(default_factory=list)
-    summary: Optional[str] = None
+    related_memories: list[str] = Field(default_factory=list)
+    summary: str | None = None
 
-    def add_message(self, message: Dict[str, Any], tokens: int = 0) -> None:
+    def add_message(self, message: dict[str, Any], tokens: int = 0) -> None:
         """Add a message to the conversation."""
         self.messages.append(message)
         self.total_messages += 1
@@ -125,25 +125,25 @@ class MemoryQuery(BaseModel):
     """Query for retrieving memories."""
 
     # Content filtering
-    query_text: Optional[str] = None
-    keywords: Optional[List[str]] = None
-    categories: Optional[List[str]] = None
+    query_text: str | None = None
+    keywords: list[str] | None = None
+    categories: list[str] | None = None
 
     # Type and scope filtering
-    memory_types: Optional[List[MemoryType]] = None
-    scopes: Optional[List[MemoryScope]] = None
-    priorities: Optional[List[MemoryPriority]] = None
+    memory_types: list[MemoryType] | None = None
+    scopes: list[MemoryScope] | None = None
+    priorities: list[MemoryPriority] | None = None
 
     # Context filtering
-    agent_id: Optional[str] = None
-    session_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    task_id: Optional[str] = None
+    agent_id: str | None = None
+    session_id: str | None = None
+    conversation_id: str | None = None
+    task_id: str | None = None
 
     # Temporal filtering
-    created_after: Optional[datetime] = None
-    created_before: Optional[datetime] = None
-    accessed_after: Optional[datetime] = None
+    created_after: datetime | None = None
+    created_before: datetime | None = None
+    accessed_after: datetime | None = None
 
     # Semantic search
     use_semantic_search: bool = True
@@ -160,17 +160,17 @@ class MemorySearchResult(BaseModel):
 
     entry: MemoryEntry
     relevance_score: float = 0.0
-    similarity_score: Optional[float] = None
-    match_reasons: List[str] = Field(default_factory=list)
+    similarity_score: float | None = None
+    match_reasons: list[str] = Field(default_factory=list)
 
 
 class MemoryStats(BaseModel):
     """Statistics about memory usage."""
 
     total_entries: int = 0
-    entries_by_type: Dict[str, int] = Field(default_factory=dict)
-    entries_by_scope: Dict[str, int] = Field(default_factory=dict)
-    entries_by_priority: Dict[str, int] = Field(default_factory=dict)
+    entries_by_type: dict[str, int] = Field(default_factory=dict)
+    entries_by_scope: dict[str, int] = Field(default_factory=dict)
+    entries_by_priority: dict[str, int] = Field(default_factory=dict)
 
     # Storage metrics
     total_size_bytes: int = 0
@@ -180,7 +180,7 @@ class MemoryStats(BaseModel):
     # Activity metrics
     daily_accesses: int = 0
     weekly_accesses: int = 0
-    most_accessed_entries: List[str] = Field(default_factory=list)
+    most_accessed_entries: list[str] = Field(default_factory=list)
 
     # Performance metrics
     avg_query_time_ms: float = 0.0
@@ -190,7 +190,7 @@ class MemoryStats(BaseModel):
 class MemoryBackend(ABC):
     """Abstract base class for memory storage backends."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize the memory backend."""
         self.config = config
 
@@ -205,7 +205,7 @@ class MemoryBackend(ABC):
         pass
 
     @abstractmethod
-    async def get_memory(self, memory_id: str) -> Optional[MemoryEntry]:
+    async def get_memory(self, memory_id: str) -> MemoryEntry | None:
         """Retrieve a specific memory by ID."""
         pass
 
@@ -220,7 +220,7 @@ class MemoryBackend(ABC):
         pass
 
     @abstractmethod
-    async def search_memories(self, query: MemoryQuery) -> List[MemorySearchResult]:
+    async def search_memories(self, query: MemoryQuery) -> list[MemorySearchResult]:
         """Search for memories matching the query."""
         pass
 
@@ -230,7 +230,7 @@ class MemoryBackend(ABC):
         pass
 
     @abstractmethod
-    async def get_conversation(self, conversation_id: str) -> Optional[ConversationContext]:
+    async def get_conversation(self, conversation_id: str) -> ConversationContext | None:
         """Retrieve conversation context."""
         pass
 
@@ -259,12 +259,12 @@ class EmbeddingProvider(ABC):
     """Abstract base class for text embedding providers."""
 
     @abstractmethod
-    async def generate_embedding(self, text: str) -> List[float]:
+    async def generate_embedding(self, text: str) -> list[float]:
         """Generate embedding vector for text."""
         pass
 
     @abstractmethod
-    async def generate_embeddings(self, texts: List[str]) -> List[List[float]]:
+    async def generate_embeddings(self, texts: list[str]) -> list[list[float]]:
         """Generate embedding vectors for multiple texts."""
         pass
 
@@ -277,7 +277,7 @@ class EmbeddingProvider(ABC):
 class MemoryManager(ABC):
     """Abstract base class for memory management."""
 
-    def __init__(self, backend: MemoryBackend, embedding_provider: Optional[EmbeddingProvider] = None):
+    def __init__(self, backend: MemoryBackend, embedding_provider: EmbeddingProvider | None = None):
         """Initialize the memory manager."""
         self.backend = backend
         self.embedding_provider = embedding_provider
@@ -303,10 +303,10 @@ class MemoryManager(ABC):
     @abstractmethod
     async def retrieve(
         self,
-        query: Union[str, MemoryQuery],
+        query: str | MemoryQuery,
         agent_id: str,
         limit: int = 10
-    ) -> List[MemorySearchResult]:
+    ) -> list[MemorySearchResult]:
         """Retrieve memories matching the query."""
         pass
 
@@ -325,7 +325,7 @@ class MemoryManager(ABC):
         self,
         conversation_id: str,
         agent_id: str
-    ) -> Optional[ConversationContext]:
+    ) -> ConversationContext | None:
         """Get conversation context for managing chat history."""
         pass
 

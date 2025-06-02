@@ -18,7 +18,7 @@ class SimpleControlCenter(App):
         grid-size: 2 2;
         grid-gutter: 1;
     }
-    
+
     .panel {
         border: solid green;
         padding: 1;

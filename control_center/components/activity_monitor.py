@@ -7,7 +7,6 @@ import json
 import time
 from collections import deque
 from datetime import datetime
-from typing import Dict, List, Optional
 
 import aiohttp
 import websockets

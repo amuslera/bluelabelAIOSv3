@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import redis.asyncio as redis
 
@@ -271,7 +271,7 @@ class AgentRegistry:
             logger.error(f"Failed to update stats for agent {agent_id}: {e}")
             return False
 
-    async def get_agent_metadata(self, agent_id: str) -> Optional[AgentMetadata]:
+    async def get_agent_metadata(self, agent_id: str) -> AgentMetadata | None:
         """Get metadata for a specific agent."""
         try:
             metadata_key = f"{self.registry_prefix}:agents:{agent_id}:metadata"
@@ -297,7 +297,7 @@ class AgentRegistry:
             logger.error(f"Failed to get metadata for agent {agent_id}: {e}")
             return None
 
-    async def get_agent_health(self, agent_id: str) -> Optional[AgentHealth]:
+    async def get_agent_health(self, agent_id: str) -> AgentHealth | None:
         """Get health status for a specific agent."""
         try:
             health_key = f"{self.registry_prefix}:agents:{agent_id}:health"
@@ -325,7 +325,7 @@ class AgentRegistry:
             logger.error(f"Failed to get health for agent {agent_id}: {e}")
             return None
 
-    async def get_agent_stats(self, agent_id: str) -> Optional[AgentStats]:
+    async def get_agent_stats(self, agent_id: str) -> AgentStats | None:
         """Get statistics for a specific agent."""
         try:
             stats_key = f"{self.registry_prefix}:agents:{agent_id}:stats"
@@ -351,10 +351,10 @@ class AgentRegistry:
 
     async def list_agents(
         self,
-        agent_type: Optional[AgentType] = None,
-        state: Optional[AgentState] = None,
+        agent_type: AgentType | None = None,
+        state: AgentState | None = None,
         healthy_only: bool = False,
-    ) -> List[str]:
+    ) -> list[str]:
         """List all registered agents with optional filtering."""
         try:
             if agent_type:
@@ -391,7 +391,7 @@ class AgentRegistry:
             logger.error(f"Failed to list agents: {e}")
             return []
 
-    async def find_agents_by_capability(self, capability: str) -> List[str]:
+    async def find_agents_by_capability(self, capability: str) -> list[str]:
         """Find agents that have a specific capability."""
         try:
             capability_key = f"{self.registry_prefix}:indices:capability:{capability}"
@@ -402,7 +402,7 @@ class AgentRegistry:
             logger.error(f"Failed to find agents by capability {capability}: {e}")
             return []
 
-    async def get_registry_stats(self) -> Dict[str, Any]:
+    async def get_registry_stats(self) -> dict[str, Any]:
         """Get overall registry statistics."""
         try:
             stats = {
@@ -479,7 +479,7 @@ class AgentRegistry:
                 agent_id=request.metadata.id
             )
 
-    def _get_assigned_queues(self, metadata: AgentMetadata) -> List[str]:
+    def _get_assigned_queues(self, metadata: AgentMetadata) -> list[str]:
         """Determine which queues an agent should be assigned to."""
         queues = [
             f"agent.{metadata.type.value}",  # Type-specific queue
@@ -555,7 +555,7 @@ class AgentRegistry:
 
 
 # Global registry instance
-agent_registry: Optional[AgentRegistry] = None
+agent_registry: AgentRegistry | None = None
 
 
 async def get_agent_registry() -> AgentRegistry:

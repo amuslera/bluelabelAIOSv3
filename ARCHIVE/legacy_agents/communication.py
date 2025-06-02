@@ -11,7 +11,7 @@ import uuid
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -65,37 +65,37 @@ class AgentCommunicationMessage(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     message_type: MessageType
     sender_id: str
-    recipient_id: Optional[str] = None  # None for broadcast
-    conversation_id: Optional[str] = None  # For tracking conversation threads
-    parent_message_id: Optional[str] = None  # For response chains
+    recipient_id: str | None = None  # None for broadcast
+    conversation_id: str | None = None  # For tracking conversation threads
+    parent_message_id: str | None = None  # For response chains
 
     # Content
     subject: str
-    content: Dict[str, Any] = Field(default_factory=dict)
+    content: dict[str, Any] = Field(default_factory=dict)
 
     # Metadata
     priority: Priority = Priority.NORMAL
-    timeout_seconds: Optional[float] = None
+    timeout_seconds: float | None = None
     requires_response: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime | None = None
 
     # Context
-    context: Dict[str, Any] = Field(default_factory=dict)
-    tags: List[str] = Field(default_factory=list)
+    context: dict[str, Any] = Field(default_factory=dict)
+    tags: list[str] = Field(default_factory=list)
 
 
 class ConversationThread(BaseModel):
     """Tracks a conversation between agents."""
 
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    participants: List[str]
+    participants: list[str]
     subject: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_activity: datetime = Field(default_factory=datetime.utcnow)
     message_count: int = 0
     is_active: bool = True
-    context: Dict[str, Any] = Field(default_factory=dict)
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 class PendingRequest(BaseModel):
@@ -126,7 +126,7 @@ class AgentCommunicationInterface:
         self,
         agent_id: str,
         message_queue: MessageQueue,
-        discovery: Optional[AgentDiscovery] = None,
+        discovery: AgentDiscovery | None = None,
         default_timeout: float = 30.0,
     ):
         """Initialize the communication interface."""
@@ -136,9 +136,9 @@ class AgentCommunicationInterface:
         self.default_timeout = default_timeout
 
         # State tracking
-        self.pending_requests: Dict[str, PendingRequest] = {}
-        self.conversations: Dict[str, ConversationThread] = {}
-        self.message_handlers: Dict[MessageType, List[Callable]] = {}
+        self.pending_requests: dict[str, PendingRequest] = {}
+        self.conversations: dict[str, ConversationThread] = {}
+        self.message_handlers: dict[MessageType, list[Callable]] = {}
 
         # Background tasks
         self._cleanup_task: asyncio.Optional[Task] = None
@@ -224,12 +224,12 @@ class AgentCommunicationInterface:
         self,
         recipient_id: str,
         subject: str,
-        content: Optional[Dict[str, Any]] = None,
+        content: dict[str, Any] | None = None,
         message_type: MessageType = MessageType.REQUEST,
         priority: Priority = Priority.NORMAL,
-        timeout: Optional[float] = None,
-        conversation_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        timeout: float | None = None,
+        conversation_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Send a request to another agent and wait for response.
 
@@ -299,7 +299,7 @@ class AgentCommunicationInterface:
     async def send_response(
         self,
         request_message: AgentCommunicationMessage,
-        content: Dict[str, Any],
+        content: dict[str, Any],
         success: bool = True,
     ) -> None:
         """Send a response to a request message."""
@@ -334,9 +334,9 @@ class AgentCommunicationInterface:
         self,
         recipient_id: str,
         subject: str,
-        content: Optional[Dict[str, Any]] = None,
+        content: dict[str, Any] | None = None,
         priority: Priority = Priority.NORMAL,
-        conversation_id: Optional[str] = None,
+        conversation_id: str | None = None,
     ) -> None:
         """Send a one-way notification to another agent."""
         try:
@@ -365,9 +365,9 @@ class AgentCommunicationInterface:
     async def broadcast_message(
         self,
         subject: str,
-        content: Optional[Dict[str, Any]] = None,
-        target_type: Optional[AgentType] = None,
-        target_capability: Optional[str] = None,
+        content: dict[str, Any] | None = None,
+        target_type: AgentType | None = None,
+        target_capability: str | None = None,
         priority: Priority = Priority.NORMAL,
     ) -> None:
         """Broadcast a message to multiple agents."""
@@ -418,10 +418,10 @@ class AgentCommunicationInterface:
         self,
         task_type: TaskType,
         task_description: str,
-        task_parameters: Optional[Dict[str, Any]] = None,
-        preferred_agent_type: Optional[AgentType] = None,
-        timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+        task_parameters: dict[str, Any] | None = None,
+        preferred_agent_type: AgentType | None = None,
+        timeout: float | None = None,
+    ) -> dict[str, Any]:
         """Delegate a task to the most suitable agent."""
         try:
             # Find suitable agent if discovery is available
@@ -467,9 +467,9 @@ class AgentCommunicationInterface:
 
     async def start_conversation(
         self,
-        participants: List[str],
+        participants: list[str],
         subject: str,
-        initial_message: Optional[Dict[str, Any]] = None,
+        initial_message: dict[str, Any] | None = None,
     ) -> str:
         """Start a multi-agent conversation."""
         try:
@@ -552,7 +552,7 @@ class AgentCommunicationInterface:
             self.stats["errors"] += 1
             logger.error(f"Error handling incoming message: {e}")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get communication statistics."""
         return {
             **self.stats,
@@ -673,7 +673,7 @@ class AgentMessageHandler(MessageHandler):
     def __init__(self, comm_interface: AgentCommunicationInterface):
         self.comm_interface = comm_interface
 
-    async def handle_message(self, message: AgentMessage) -> Optional[AgentMessage]:
+    async def handle_message(self, message: AgentMessage) -> AgentMessage | None:
         """Handle incoming messages and route to communication interface."""
         await self.comm_interface.handle_incoming_message(message)
         # No response needed as responses are handled separately

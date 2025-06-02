@@ -11,7 +11,7 @@ import json
 import logging
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import websockets
 
@@ -40,7 +40,7 @@ class CollaborativeAgentConfig(EnhancedAgentConfig):
 
         super().__init__(**defaults)
 
-    def _get_role_defaults(self, role: str) -> Dict[str, Any]:
+    def _get_role_defaults(self, role: str) -> dict[str, Any]:
         """Get default configuration based on agent role."""
         role_configs = {
             "cto": {
@@ -90,7 +90,7 @@ class CollaborativeAgentConfig(EnhancedAgentConfig):
 class CollaborativeAgent(EnhancedBaseAgent):
     """
     Enhanced BaseAgent with multi-terminal collaboration capabilities.
-    
+
     This agent can:
     - Connect to collaboration server for real-time coordination
     - Receive task assignments from orchestrator
@@ -98,7 +98,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
     - Execute tasks using Enhanced BaseAgent framework
     """
 
-    def __init__(self, config: CollaborativeAgentConfig, llm_router: Optional[LLMRouter] = None):
+    def __init__(self, config: CollaborativeAgentConfig, llm_router: LLMRouter | None = None):
         super().__init__(config)
 
         self.collab_config = config
@@ -108,9 +108,9 @@ class CollaborativeAgent(EnhancedBaseAgent):
         # Collaboration state
         self.websocket: websockets.Optional[WebSocketServerProtocol] = None
         self.connected = False
-        self.collaborators: Dict[str, Any] = {}
-        self.assigned_tasks: List[Dict[str, Any]] = []
-        self.current_assignment: Optional[Dict[str, Any]] = None
+        self.collaborators: dict[str, Any] = {}
+        self.assigned_tasks: list[dict[str, Any]] = []
+        self.current_assignment: dict[str, Any] | None = None
 
         # Use provided router or create default
         if llm_router:
@@ -160,7 +160,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
             logger.error(f"❌ Failed to connect to collaboration server: {e}")
             self.connected = False
 
-    async def send_collaboration_message(self, data: Dict[str, Any]):
+    async def send_collaboration_message(self, data: dict[str, Any]):
         """Send message to collaboration server."""
         if self.websocket and self.connected:
             try:
@@ -188,7 +188,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
             self.connected = False
             logger.warning("🔌 Disconnected from collaboration server")
 
-    async def _handle_collaboration_message(self, data: Dict[str, Any]):
+    async def _handle_collaboration_message(self, data: dict[str, Any]):
         """Handle messages from collaboration server."""
         message_type = data.get("type")
 
@@ -197,7 +197,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
 
         elif message_type == "sync_state":
             self.collaborators = data.get("collaborators", {})
-            recent_messages = data.get("recent_messages", [])
+            data.get("recent_messages", [])
             logger.info(f"🔄 Synced with {len(self.collaborators)} collaborators")
 
         elif message_type == "new_message":
@@ -216,7 +216,7 @@ class CollaborativeAgent(EnhancedBaseAgent):
         elif message_type == "collaborator_left":
             logger.info(f"👋 {data.get('message', 'Someone left')}")
 
-    async def _handle_team_message(self, data: Dict[str, Any]):
+    async def _handle_team_message(self, data: dict[str, Any]):
         """Handle messages from team members."""
         message = data.get("message", {})
         from_name = data.get("from_name", "Unknown")
@@ -289,7 +289,7 @@ Context: We're working on AIOSv3, a modular AI agent platform.""",
         except Exception as e:
             logger.error(f"Failed to generate response to team message: {e}")
 
-    async def _handle_task_assignment(self, data: Dict[str, Any]):
+    async def _handle_task_assignment(self, data: dict[str, Any]):
         """Handle task assignment from orchestrator."""
         task_data = data.get("task", {})
 
@@ -310,7 +310,7 @@ Context: We're working on AIOSv3, a modular AI agent platform.""",
         # Execute the task
         await self._execute_assigned_task(task_data)
 
-    async def _execute_assigned_task(self, task_data: Dict[str, Any]):
+    async def _execute_assigned_task(self, task_data: dict[str, Any]):
         """Execute an assigned task using Enhanced BaseAgent framework."""
         try:
             # Convert to EnhancedTask
@@ -379,7 +379,7 @@ Context: We're working on AIOSv3, a modular AI agent platform.""",
                 "current_task": None
             })
 
-    async def _handle_task_update(self, data: Dict[str, Any]):
+    async def _handle_task_update(self, data: dict[str, Any]):
         """Handle task status updates."""
         task = data.get("task", {})
         logger.info(f"📋 Task updated: {task.get('title')} [{task.get('status')}]")
@@ -489,21 +489,21 @@ Provide expert guidance based on your role and expertise.""")
 
 
 # Factory functions for easy agent creation
-async def create_collaborative_cto_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
+async def create_collaborative_cto_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
     """Create CTO collaborative agent."""
     config = CollaborativeAgentConfig(role="cto", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)
     await agent.initialize()
     return agent
 
-async def create_collaborative_backend_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
+async def create_collaborative_backend_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
     """Create Backend Developer collaborative agent."""
     config = CollaborativeAgentConfig(role="backend-dev", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)
     await agent.initialize()
     return agent
 
-async def create_collaborative_qa_agent(collaboration_server: str = "ws://localhost:8765", llm_router: Optional[LLMRouter] = None) -> CollaborativeAgent:
+async def create_collaborative_qa_agent(collaboration_server: str = "ws://localhost:8765", llm_router: LLMRouter | None = None) -> CollaborativeAgent:
     """Create QA Engineer collaborative agent."""
     config = CollaborativeAgentConfig(role="qa", collaboration_server=collaboration_server)
     agent = CollaborativeAgent(config, llm_router)

@@ -11,7 +11,7 @@ import time
 import uuid
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -37,15 +37,15 @@ class Task(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     type: TaskType
     description: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
     priority: Priority = Priority.MEDIUM
     complexity: int = Field(default=5, ge=1, le=10)
     requires_privacy: bool = False
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    deadline: Optional[datetime] = None
-    context: Dict[str, Any] = Field(default_factory=dict)
-    assigned_agent_id: Optional[str] = None
-    parent_task_id: Optional[str] = None
+    deadline: datetime | None = None
+    context: dict[str, Any] = Field(default_factory=dict)
+    assigned_agent_id: str | None = None
+    parent_task_id: str | None = None
 
 
 class TaskResult(BaseModel):
@@ -54,8 +54,8 @@ class TaskResult(BaseModel):
     task_id: str
     agent_id: str
     status: str  # "success", "error", "partial", "timeout"
-    result: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
+    result: dict[str, Any] | None = None
+    error: str | None = None
     execution_time: float
     model_used: str
     cost_estimate: float = 0.0
@@ -68,10 +68,10 @@ class AgentConfig(BaseModel):
     name: str
     description: str
     agent_type: AgentType
-    capabilities: List[str]
-    model_preferences: Dict[str, str]
-    routing_rules: List[Dict[str, Any]] = Field(default_factory=list)
-    personality: Dict[str, str] = Field(default_factory=dict)
+    capabilities: list[str]
+    model_preferences: dict[str, str]
+    routing_rules: list[dict[str, Any]] = Field(default_factory=list)
+    personality: dict[str, str] = Field(default_factory=dict)
     max_concurrent_tasks: int = Field(default=3, ge=1)
     task_timeout_seconds: float = Field(default=300.0, gt=0)
     health_check_interval: float = Field(default=30.0, gt=0)
@@ -94,8 +94,8 @@ class BaseAgent(ABC):
 
     def __init__(
         self,
-        agent_id: Optional[str] = None,
-        config: Optional[AgentConfig] = None,
+        agent_id: str | None = None,
+        config: AgentConfig | None = None,
         llm_router=None,
         message_queue=None,
         memory_store=None,
@@ -122,15 +122,15 @@ class BaseAgent(ABC):
         self.last_heartbeat = datetime.utcnow()
 
         # Task management
-        self.current_tasks: Dict[str, Task] = {}
-        self.task_history: List[TaskResult] = []
+        self.current_tasks: dict[str, Task] = {}
+        self.task_history: list[TaskResult] = []
         self.task_queue: asyncio.Queue = asyncio.Queue()
 
         # Memory and statistics
-        self.memory: Dict[str, Any] = {}
+        self.memory: dict[str, Any] = {}
         self.stats = AgentStats(agent_id=self.id)
         self.error_count = 0
-        self.last_error: Optional[str] = None
+        self.last_error: str | None = None
 
         # Background tasks
         self._background_tasks: Set[asyncio.Task] = set()
@@ -170,7 +170,7 @@ class BaseAgent(ABC):
         return self.metadata.type
 
     @property
-    def capabilities(self) -> List[str]:
+    def capabilities(self) -> list[str]:
         """Get the agent's capabilities."""
         return self.config.capabilities if self.config else []
 
@@ -371,7 +371,7 @@ class BaseAgent(ABC):
         return "claude-3-sonnet"  # Default fallback
 
     @abstractmethod
-    async def _execute_task_internal(self, task: Task, model_id: str) -> Dict[str, Any]:
+    async def _execute_task_internal(self, task: Task, model_id: str) -> dict[str, Any]:
         """
         Internal task execution logic. Must be implemented by subclasses.
 
@@ -386,7 +386,7 @@ class BaseAgent(ABC):
 
     async def communicate_with_agent(
         self, target_agent_id: str, message: str, message_type: str = "general"
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Send a message to another agent.
 
@@ -442,7 +442,7 @@ class BaseAgent(ABC):
         """Set a value in agent memory."""
         self.memory[key] = value
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get the current status of the agent."""
         return {
             "id": self.id,

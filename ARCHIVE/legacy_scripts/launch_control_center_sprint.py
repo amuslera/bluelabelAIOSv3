@@ -20,7 +20,7 @@ import json
 import os
 import subprocess
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Import our components
 from theatrical_base_agent import TheatricalBaseAgent, create_theatrical_agent
@@ -191,7 +191,7 @@ All changes go through PR review process with AI + Human approval.
 
         print("\n✅ All agents ready for Sprint 1.6!\n")
 
-    async def define_sprint_tasks(self) -> List[Dict[str, Any]]:
+    async def define_sprint_tasks(self) -> list[dict[str, Any]]:
         """Define tasks for the sprint."""
         tasks = [
             {
@@ -223,7 +223,7 @@ All changes go through PR review process with AI + Human approval.
 
         return tasks
 
-    async def execute_task(self, task: Dict[str, Any]):
+    async def execute_task(self, task: dict[str, Any]):
         """Execute a single task with an agent."""
         agent = self.agents[task['assignee']]
 
@@ -311,7 +311,7 @@ All changes go through PR review process with AI + Human approval.
 
         self.tasks_completed.append(task['id'])
 
-    async def _develop_frontend(self, agent: TheatricalBaseAgent, task: Dict[str, Any]):
+    async def _develop_frontend(self, agent: TheatricalBaseAgent, task: dict[str, Any]):
         """Frontend development simulation."""
         await agent.think_aloud("the best UI layout for the control center")
 
@@ -506,7 +506,7 @@ DataTable {
             "Creating main control center application"
         )
 
-    async def _develop_backend(self, agent: TheatricalBaseAgent, task: Dict[str, Any]):
+    async def _develop_backend(self, agent: TheatricalBaseAgent, task: dict[str, Any]):
         """Backend development simulation."""
         await agent.think_aloud("the API structure for real-time updates")
 
@@ -663,7 +663,7 @@ async def get_metrics():
             "Implementing WebSocket for real-time updates"
         )
 
-    async def _develop_integration(self, agent: TheatricalBaseAgent, task: Dict[str, Any]):
+    async def _develop_integration(self, agent: TheatricalBaseAgent, task: dict[str, Any]):
         """Integration development simulation."""
         await agent.think_aloud("how to wire all components together")
 

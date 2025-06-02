@@ -5,7 +5,7 @@ import os
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from dotenv import load_dotenv
@@ -52,7 +52,7 @@ def skip_if_no_api_key() -> None:
 
 
 @pytest.fixture
-def mock_task_data() -> Dict[str, Any]:
+def mock_task_data() -> dict[str, Any]:
     """Provide mock task data for testing."""
     return {
         "type": "test_task",
@@ -64,7 +64,7 @@ def mock_task_data() -> Dict[str, Any]:
 
 
 @pytest.fixture
-def mock_agent_config() -> Dict[str, Any]:
+def mock_agent_config() -> dict[str, Any]:
     """Provide mock agent configuration for testing."""
     return {
         "name": "Test Agent",

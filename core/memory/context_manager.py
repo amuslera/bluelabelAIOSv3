@@ -8,7 +8,7 @@ to maintain relevant history within model context windows.
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -31,7 +31,7 @@ class ContextWindow(BaseModel):
     max_tokens: int = 32768
 
     # Current state
-    messages: List[Dict[str, Any]] = []
+    messages: list[dict[str, Any]] = []
     current_tokens: int = 0
 
     # Configuration
@@ -40,10 +40,10 @@ class ContextWindow(BaseModel):
     min_messages_to_keep: int = 5  # Always keep recent messages
 
     # Tracking
-    last_compression: Optional[datetime] = None
+    last_compression: datetime | None = None
     compression_count: int = 0
 
-    def add_message(self, message: Dict[str, Any], token_count: int) -> bool:
+    def add_message(self, message: dict[str, Any], token_count: int) -> bool:
         """Add a message to the context window."""
         self.messages.append(message)
         self.current_tokens += token_count
@@ -66,7 +66,7 @@ class MessageImportance(BaseModel):
 
     message_index: int
     importance_score: float
-    reasons: List[str]
+    reasons: list[str]
 
     # Factors contributing to importance
     recency_score: float = 0.0
@@ -79,7 +79,7 @@ class MessageImportance(BaseModel):
 class ContextManager:
     """
     Manages conversation context windows and intelligent compression.
-    
+
     Provides automatic context management to keep conversations within
     model token limits while preserving important information.
     """
@@ -87,7 +87,7 @@ class ContextManager:
     def __init__(self, memory_manager: MemoryManager):
         """Initialize context manager."""
         self.memory_manager = memory_manager
-        self.active_contexts: Dict[str, ContextWindow] = {}
+        self.active_contexts: dict[str, ContextWindow] = {}
 
         # Token estimation (rough approximation: ~4 chars per token)
         self.chars_per_token = 4
@@ -130,12 +130,12 @@ class ContextManager:
         self,
         agent_id: str,
         conversation_id: str,
-        message: Dict[str, Any],
+        message: dict[str, Any],
         auto_compress: bool = True
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Add a message to the context window.
-        
+
         Returns:
             Tuple of (needs_compression, summary_if_compressed)
         """
@@ -161,11 +161,11 @@ class ContextManager:
         self,
         agent_id: str,
         conversation_id: str,
-        target_ratio: Optional[float] = None
+        target_ratio: float | None = None
     ) -> str:
         """
         Compress context window by summarizing and removing less important messages.
-        
+
         Returns:
             Summary of compressed content
         """
@@ -237,10 +237,10 @@ class ContextManager:
         conversation_id: str,
         query: str,
         max_tokens: int = 8192
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Get relevant context messages for a specific query.
-        
+
         Useful for retrieving focused context for specific tasks.
         """
         context = await self.get_context(agent_id, conversation_id)
@@ -295,7 +295,7 @@ class ContextManager:
         logger.info(f"Cleaned up {removed_count} inactive context windows")
         return removed_count
 
-    def _estimate_tokens(self, message: Dict[str, Any]) -> int:
+    def _estimate_tokens(self, message: dict[str, Any]) -> int:
         """Estimate token count for a message."""
         content = ""
 
@@ -318,7 +318,7 @@ class ContextManager:
 
     async def _score_message_importance(
         self, context: ContextWindow
-    ) -> List[MessageImportance]:
+    ) -> list[MessageImportance]:
         """Score messages by importance for compression decisions."""
         scores = []
         total_messages = len(context.messages)
@@ -360,9 +360,9 @@ class ContextManager:
     async def _select_messages_for_compression(
         self,
         context: ContextWindow,
-        scores: List[MessageImportance],
+        scores: list[MessageImportance],
         target_tokens: int
-    ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """Select which messages to keep vs compress."""
         # Always keep the most recent messages
         min_keep = min(context.min_messages_to_keep, len(context.messages))
@@ -392,13 +392,13 @@ class ContextManager:
         # Add any remaining messages to compressed list
         for i in remaining_indices:
             message = context.messages[i]
-            if message not in [msg for msg in kept_messages]:
+            if message not in list(kept_messages):
                 compressed_messages.append(message)
 
         return kept_messages, compressed_messages
 
     async def _create_compression_summary(
-        self, compressed_messages: List[Dict[str, Any]]
+        self, compressed_messages: list[dict[str, Any]]
     ) -> str:
         """Create a summary of compressed conversation content."""
         if not compressed_messages:
@@ -436,7 +436,7 @@ class ContextManager:
 
         return ". ".join(summary_parts)
 
-    def _extract_message_content(self, message: Dict[str, Any]) -> str:
+    def _extract_message_content(self, message: dict[str, Any]) -> str:
         """Extract text content from a message."""
         content = message.get("content", "")
 
@@ -466,7 +466,7 @@ class ContextManager:
 
         return min(1.0, matches / 5)  # Normalize by expected keyword density
 
-    def _calculate_relevance(self, message: Dict[str, Any], query: str) -> float:
+    def _calculate_relevance(self, message: dict[str, Any], query: str) -> float:
         """Calculate relevance of a message to a query."""
         content = self._extract_message_content(message).lower()
         query_lower = query.lower()

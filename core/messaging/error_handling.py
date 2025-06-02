@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from core.messaging.queue import AgentMessage, MessageHandler, MessageQueue
 
@@ -53,7 +53,7 @@ class ErrorInfo:
     retry_count: int = 0
     max_retries: int = 3
     retry_strategy: RetryStrategy = RetryStrategy.EXPONENTIAL
-    stack_trace: Optional[str] = None
+    stack_trace: str | None = None
 
 
 @dataclass
@@ -66,8 +66,8 @@ class RetryPolicy:
     max_delay: float = 300.0  # 5 minutes
     backoff_factor: float = 2.0
     jitter: bool = True
-    retry_on: Optional[List[ErrorType]] = None  # None means retry on all errors
-    no_retry_on: Optional[List[ErrorType]] = None
+    retry_on: list[ErrorType] | None = None  # None means retry on all errors
+    no_retry_on: list[ErrorType] | None = None
 
 
 class ErrorHandler:
@@ -78,20 +78,20 @@ class ErrorHandler:
     def __init__(
         self,
         message_queue: MessageQueue,
-        default_retry_policy: Optional[RetryPolicy] = None,
+        default_retry_policy: RetryPolicy | None = None,
     ):
         """Initialize error handler."""
         self.message_queue = message_queue
         self.default_retry_policy = default_retry_policy or RetryPolicy()
-        self.error_callbacks: Dict[ErrorType, List[Callable]] = {}
-        self.custom_retry_handlers: Dict[str, Callable] = {}
+        self.error_callbacks: dict[ErrorType, list[Callable]] = {}
+        self.custom_retry_handlers: dict[str, Callable] = {}
 
     async def handle_error(
         self,
         error: Exception,
         message: AgentMessage,
         agent_id: str,
-        retry_policy: Optional[RetryPolicy] = None,
+        retry_policy: RetryPolicy | None = None,
     ) -> bool:
         """
         Handle an error that occurred during message processing.
@@ -328,7 +328,7 @@ class DeadLetterQueueProcessor:
     def __init__(self, message_queue: MessageQueue):
         """Initialize DLQ processor."""
         self.message_queue = message_queue
-        self.dlq_messages: List[Dict[str, Any]] = []
+        self.dlq_messages: list[dict[str, Any]] = []
         self.processing_stats = {
             "total_processed": 0,
             "retry_attempts": 0,
@@ -349,7 +349,7 @@ class DeadLetterQueueProcessor:
             queue_name="dlq.processor",
         )
 
-    async def process_dlq_message(self, dlq_entry: Dict[str, Any]) -> None:
+    async def process_dlq_message(self, dlq_entry: dict[str, Any]) -> None:
         """Process a message from the DLQ."""
         self.dlq_messages.append(dlq_entry)
         self.processing_stats["total_processed"] += 1
@@ -400,7 +400,7 @@ class DeadLetterQueueProcessor:
             logger.error(f"Failed to retry DLQ message {message_index}: {e}")
             return False
 
-    def get_error_report(self) -> Dict[str, Any]:
+    def get_error_report(self) -> dict[str, Any]:
         """Generate an error report from DLQ analysis."""
         recent_messages = [
             msg
@@ -443,7 +443,7 @@ class DLQMessageHandler(MessageHandler):
     def __init__(self, dlq_processor: DeadLetterQueueProcessor):
         self.dlq_processor = dlq_processor
 
-    async def handle_message(self, message: AgentMessage) -> Optional[AgentMessage]:
+    async def handle_message(self, message: AgentMessage) -> AgentMessage | None:
         """Handle messages sent to the DLQ."""
         if message.envelope.get("message_type") == "dlq_entry":
             await self.dlq_processor.process_dlq_message(message.payload)
@@ -453,8 +453,8 @@ class DLQMessageHandler(MessageHandler):
 
 
 # Global error handler instance
-error_handler: Optional[ErrorHandler] = None
-dlq_processor: Optional[DeadLetterQueueProcessor] = None
+error_handler: ErrorHandler | None = None
+dlq_processor: DeadLetterQueueProcessor | None = None
 
 
 def initialize_error_handling(message_queue: MessageQueue) -> None:

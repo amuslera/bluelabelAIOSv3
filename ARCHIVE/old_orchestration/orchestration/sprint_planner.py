@@ -12,15 +12,16 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from agents.base.types import TaskType
 from orchestration.task_orchestrator import (
     SprintObjective,
     Task,
     TaskPriority,
     TaskStatus,
 )
+
+from agents.base.types import TaskType
 
 logger = logging.getLogger(__name__)
 
@@ -51,15 +52,15 @@ class PlanningSession:
     sprint_name: str
     duration_days: int
     start_date: str
-    objectives: List[SprintObjective]
-    tasks: List[Task]
+    objectives: list[SprintObjective]
+    tasks: list[Task]
     current_phase: PlanningPhase
     state: PlanningState
     created_at: float
     human_id: str
-    team_capacity: Dict[str, int]
-    planning_notes: List[str]
-    decisions: List[str]
+    team_capacity: dict[str, int]
+    planning_notes: list[str]
+    decisions: list[str]
 
 
 @dataclass
@@ -69,8 +70,8 @@ class TaskEstimate:
     estimated_hours: int
     confidence: float  # 0.0 to 1.0
     complexity: int   # 1-10 scale
-    risk_factors: List[str]
-    dependencies: List[str]
+    risk_factors: list[str]
+    dependencies: list[str]
     suggested_agent_type: str
 
 
@@ -80,9 +81,9 @@ class CapacityAnalysis:
     total_capacity_hours: int
     available_capacity_hours: int
     utilization_percentage: float
-    agent_breakdown: Dict[str, Dict[str, Any]]
+    agent_breakdown: dict[str, dict[str, Any]]
     overallocation_risk: str
-    recommendations: List[str]
+    recommendations: list[str]
 
 
 class SprintPlanner:
@@ -95,8 +96,8 @@ class SprintPlanner:
 
     def __init__(self, orchestrator):
         self.orchestrator = orchestrator
-        self.current_session: Optional[PlanningSession] = None
-        self.planning_history: List[PlanningSession] = []
+        self.current_session: PlanningSession | None = None
+        self.planning_history: list[PlanningSession] = []
 
         # Planning templates and suggestions
         self.objective_templates = self._load_objective_templates()
@@ -227,7 +228,7 @@ class SprintPlanner:
 
 **Let's start with your main objectives!** What are the 2-3 key things you want to achieve this sprint?"""
 
-    def _format_team_capacity(self, agent_breakdown: Dict[str, Dict[str, Any]]) -> str:
+    def _format_team_capacity(self, agent_breakdown: dict[str, dict[str, Any]]) -> str:
         """Format team capacity for display."""
         lines = []
         for agent_data in agent_breakdown.values():
@@ -260,7 +261,7 @@ class SprintPlanner:
         session.current_phase = PlanningPhase.TASK_BREAKDOWN
         await self._initiate_task_breakdown_phase()
 
-    async def _parse_objectives_from_input(self, human_input: str) -> List[SprintObjective]:
+    async def _parse_objectives_from_input(self, human_input: str) -> list[SprintObjective]:
         """Parse sprint objectives from human input."""
         objectives = []
 
@@ -331,7 +332,7 @@ class SprintPlanner:
 
         return base_effort
 
-    def _suggest_acceptance_criteria(self, objective_text: str) -> List[str]:
+    def _suggest_acceptance_criteria(self, objective_text: str) -> list[str]:
         """Suggest acceptance criteria for an objective."""
         text_lower = objective_text.lower()
         criteria = []
@@ -375,7 +376,7 @@ class SprintPlanner:
 
         return criteria
 
-    async def _analyze_objectives(self, objectives: List[SprintObjective]) -> str:
+    async def _analyze_objectives(self, objectives: list[SprintObjective]) -> str:
         """Analyze sprint objectives and provide feedback."""
 
         total_effort = sum(obj.estimated_effort for obj in objectives)
@@ -439,7 +440,7 @@ What would you like to do? Accept my suggestions, modify them, or create your ow
 
         await self._send_planning_message("📋 **Task Breakdown**", message)
 
-    async def _generate_task_suggestions(self, objectives: List[SprintObjective]) -> List[Dict[str, Any]]:
+    async def _generate_task_suggestions(self, objectives: list[SprintObjective]) -> list[dict[str, Any]]:
         """Generate task suggestions based on objectives."""
         suggested_tasks = []
 
@@ -449,7 +450,7 @@ What would you like to do? Accept my suggestions, modify them, or create your ow
 
         return suggested_tasks
 
-    def _break_down_objective_to_tasks(self, objective: SprintObjective) -> List[Dict[str, Any]]:
+    def _break_down_objective_to_tasks(self, objective: SprintObjective) -> list[dict[str, Any]]:
         """Break down an objective into specific tasks."""
         tasks = []
         obj_text = objective.title.lower()
@@ -621,7 +622,7 @@ What would you like to do?"""
 
         await self._send_planning_message("📊 **Estimation Review**", message)
 
-    def _analyze_task_estimates(self, tasks: List[Task]) -> str:
+    def _analyze_task_estimates(self, tasks: list[Task]) -> str:
         """Analyze task effort estimates."""
         if not tasks:
             return "No tasks to analyze"
@@ -726,7 +727,7 @@ Ready to finalize the sprint plan?"""
 
         await self._send_planning_message("🎯 **Assignment Planning**", message)
 
-    async def _generate_assignment_recommendations(self, tasks: List[Task]) -> List[Dict[str, Any]]:
+    async def _generate_assignment_recommendations(self, tasks: list[Task]) -> list[dict[str, Any]]:
         """Generate task assignment recommendations."""
         from orchestration.assignment_engine import AssignmentEngine
 
@@ -751,7 +752,7 @@ Ready to finalize the sprint plan?"""
 
         return assignments
 
-    async def _validate_sprint_capacity(self, tasks: List[Task], assignments: List[Dict[str, Any]]) -> str:
+    async def _validate_sprint_capacity(self, tasks: list[Task], assignments: list[dict[str, Any]]) -> str:
         """Validate that sprint fits within team capacity."""
 
         # Calculate workload by agent
@@ -885,7 +886,7 @@ The team is ready to start working. Let's build something amazing together!"""
             }
         })
 
-    def _load_objective_templates(self) -> Dict[str, Any]:
+    def _load_objective_templates(self) -> dict[str, Any]:
         """Load common objective templates."""
         return {
             "feature_development": {
@@ -905,7 +906,7 @@ The team is ready to start working. Let's build something amazing together!"""
             }
         }
 
-    def _initialize_estimation_models(self) -> Dict[str, Any]:
+    def _initialize_estimation_models(self) -> dict[str, Any]:
         """Initialize effort estimation models."""
         return {
             "complexity_factors": {

@@ -11,7 +11,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -33,7 +33,7 @@ class LiveCollaborationDemo:
     """Demonstrates the live three-way collaboration experience."""
 
     def __init__(self):
-        self.cto_agent: Optional[CTOAgent] = None
+        self.cto_agent: CTOAgent | None = None
         self.total_cost = 0.0
 
     def print_banner(self):
@@ -64,7 +64,7 @@ class LiveCollaborationDemo:
             await asyncio.sleep(delay)
         print()
 
-    def print_message(self, speaker: str, message: str, metadata: Dict[str, Any] = None, typing: bool = False):
+    def print_message(self, speaker: str, message: str, metadata: dict[str, Any] = None, typing: bool = False):
         """Print a formatted message in the conversation."""
         timestamp = datetime.now().strftime("%H:%M:%S")
 

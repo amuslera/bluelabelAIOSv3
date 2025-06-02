@@ -10,7 +10,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional
 
 import psutil
 from pydantic import BaseModel, Field
@@ -60,7 +60,7 @@ class ComponentHealth(BaseModel):
 
     component_name: str
     status: HealthStatus
-    checks: Dict[str, HealthMetric]
+    checks: dict[str, HealthMetric]
     last_update: datetime = Field(default_factory=datetime.utcnow)
     message: Optional[str] = None
 
@@ -70,8 +70,8 @@ class AgentHealthReport(BaseModel):
 
     agent_id: str
     overall_status: HealthStatus
-    components: Dict[str, ComponentHealth]
-    metrics: Dict[str, HealthMetric]
+    components: dict[str, ComponentHealth]
+    metrics: dict[str, HealthMetric]
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     uptime_seconds: float
     error_count: int = 0
@@ -89,10 +89,10 @@ class HealthMonitor:
     def __init__(self, agent_id: str):
         """Initialize health monitor."""
         self.agent_id = agent_id
-        self._health_checks: Dict[str, HealthCheck] = {}
-        self._check_functions: Dict[str, Callable] = {}
-        self._metrics: Dict[str, HealthMetric] = {}
-        self._component_status: Dict[str, ComponentHealth] = {}
+        self._health_checks: dict[str, HealthCheck] = {}
+        self._check_functions: dict[str, Callable] = {}
+        self._metrics: dict[str, HealthMetric] = {}
+        self._component_status: dict[str, ComponentHealth] = {}
 
         # Monitoring state
         self._monitoring_active = False
@@ -102,12 +102,12 @@ class HealthMonitor:
         # Error tracking
         self._error_count = 0
         self._warning_count = 0
-        self._consecutive_failures: Dict[str, int] = {}
+        self._consecutive_failures: dict[str, int] = {}
 
         # Resource monitoring
         self._process = psutil.Process()
-        self._cpu_percent_history: List[float] = []
-        self._memory_history: List[float] = []
+        self._cpu_percent_history: list[float] = []
+        self._memory_history: list[float] = []
 
         # Register default health checks
         self._register_default_checks()
@@ -200,7 +200,7 @@ class HealthMonitor:
 
     async def check_health(
         self, check_name: Optional[str] = None
-    ) -> Dict[str, HealthMetric]:
+    ) -> dict[str, HealthMetric]:
         """Run health checks and return results."""
         if check_name:
             # Run specific check
@@ -473,7 +473,7 @@ class HealthMonitor:
                 component.checks = component_checks
                 component.last_update = datetime.utcnow()
 
-    def get_metrics_summary(self) -> Dict[str, Any]:
+    def get_metrics_summary(self) -> dict[str, Any]:
         """Get summary of collected metrics."""
         return {
             "agent_id": self.agent_id,

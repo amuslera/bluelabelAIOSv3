@@ -10,10 +10,9 @@ This agent focuses on:
 - Responsive design and accessibility
 """
 
-import json
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -54,7 +53,7 @@ class FrontendAgentConfig(EnhancedAgentConfig):
 class FrontendDeveloperAgent(EnhancedBaseAgent):
     """
     Frontend Developer Agent for client-side development.
-    
+
     Specializes in:
     - React component development with hooks and functional patterns
     - Vue 3 composition API and component design
@@ -65,7 +64,7 @@ class FrontendDeveloperAgent(EnhancedBaseAgent):
     - Responsive design and accessibility (WCAG)
     """
 
-    def __init__(self, config: Optional[FrontendAgentConfig] = None):
+    def __init__(self, config: FrontendAgentConfig | None = None):
         """Initialize Frontend Developer Agent with specialized configuration."""
         if config is None:
             config = FrontendAgentConfig()
@@ -431,13 +430,13 @@ interface ComponentProps {
 
 export const ComponentName: React.FC<ComponentProps> = ({ /* props */ }) => {
   const [state, setState] = useState<StateType>(initialState);
-  
+
   // Data fetching
   const { data, isLoading, error } = useQuery({
     queryKey: ['dataKey'],
     queryFn: fetchData,
   });
-  
+
   // Event handlers
   const handleAction = async () => {
     try {
@@ -446,10 +445,10 @@ export const ComponentName: React.FC<ComponentProps> = ({ /* props */ }) => {
       console.error('Error:', error);
     }
   };
-  
+
   if (isLoading) return <LoadingSpinner />;
   if (error) return <ErrorMessage error={error} />;
-  
+
   return (
     <div className="container">
       {/* Component JSX */}
@@ -558,19 +557,19 @@ describe('ComponentName', () => {
     render(<ComponentName />);
     expect(screen.getByRole('heading')).toBeInTheDocument();
   });
-  
+
   it('handles user interaction', async () => {
     const user = userEvent.setup();
     render(<ComponentName />);
-    
+
     const button = screen.getByRole('button');
     await user.click(button);
-    
+
     await waitFor(() => {
       expect(screen.getByText('Expected text')).toBeInTheDocument();
     });
   });
-  
+
   it('is accessible', () => {
     const { container } = render(<ComponentName />);
     expect(container).toBeAccessible();
@@ -621,7 +620,7 @@ export const apiService = {
     const response = await apiClient.get('/endpoint');
     return response.data;
   },
-  
+
   async postData(data: DataType) {
     const response = await apiClient.post('/endpoint', data);
     return response.data;
@@ -631,7 +630,7 @@ export const apiService = {
 
 
 # Factory function for easy Frontend Agent creation
-async def create_frontend_agent(custom_config: Optional[Dict[str, Any]] = None) -> FrontendDeveloperAgent:
+async def create_frontend_agent(custom_config: dict[str, Any] | None = None) -> FrontendDeveloperAgent:
     """Create and initialize a Frontend Developer Agent with optional custom configuration."""
 
     config_params = custom_config or {}
@@ -645,13 +644,13 @@ async def create_frontend_agent(custom_config: Optional[Dict[str, Any]] = None) 
 
 # Example usage and testing
 if __name__ == "__main__":
-    
+
     async def test_frontend_agent():
         """Test Frontend Developer Agent functionality."""
-        
+
         # Create Frontend Agent
         frontend = await create_frontend_agent()
-        
+
         # Test React component task
         component_task = EnhancedTask(
             task_type=TaskType.CODE_GENERATION,
@@ -663,7 +662,7 @@ if __name__ == "__main__":
                 "styling": "tailwindcss"
             }
         )
-        
+
         print("🎨 Testing Frontend Agent - React Component Development")
         result = await frontend.process_task(component_task)
         print(f"Success: {result.success}")
@@ -672,14 +671,14 @@ if __name__ == "__main__":
         print(f"Model used: {result.model_used}")
         print("\n" + "="*80)
         print(result.output[:1000] + "..." if len(result.output) > 1000 else result.output)
-        
+
         # Get agent status
         status = frontend.get_status()
         print("\n📊 Frontend Agent Status:")
         print(f"Tasks completed: {status['tasks_completed']}")
         print(f"Success rate: {status['success_rate']:.1%}")
         print(f"Total cost: ${status['total_cost']:.4f}")
-        
+
         await frontend.stop()
 
     # Run test

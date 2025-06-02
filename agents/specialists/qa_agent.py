@@ -12,10 +12,8 @@ This agent focuses on:
 - Test coverage analysis
 """
 
-import json
-import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -56,7 +54,7 @@ class QAAgentConfig(EnhancedAgentConfig):
 class QAEngineerAgent(EnhancedBaseAgent):
     """
     QA Engineer Agent for comprehensive testing and quality assurance.
-    
+
     Specializes in:
     - Test strategy development and planning
     - Unit test creation (pytest, Jest, unittest)
@@ -68,7 +66,7 @@ class QAEngineerAgent(EnhancedBaseAgent):
     - Test coverage analysis and reporting
     """
 
-    def __init__(self, config: Optional[QAAgentConfig] = None):
+    def __init__(self, config: QAAgentConfig | None = None):
         """Initialize QA Engineer Agent with specialized configuration."""
         if config is None:
             config = QAAgentConfig()
@@ -481,7 +479,7 @@ from datetime import datetime
 
 class TestComponent:
     \"\"\"Unit tests for Component functionality.\"\"\"
-    
+
     @pytest.fixture
     def setup(self):
         \"\"\"Test setup and fixtures.\"\"\"
@@ -490,29 +488,29 @@ class TestComponent:
             "mock_dependency": Mock(),
             "test_data": {"id": 1, "name": "test"}
         }
-    
+
     def test_happy_path(self, setup):
         \"\"\"Test normal operation with valid inputs.\"\"\"
         # Given
         component = Component(setup["mock_dependency"])
-        
+
         # When
         result = component.process(setup["test_data"])
-        
+
         # Then
         assert result.success is True
         assert result.data["id"] == 1
         setup["mock_dependency"].save.assert_called_once()
-    
+
     def test_edge_case_empty_input(self, setup):
         \"\"\"Test behavior with empty input.\"\"\"
         # Given
         component = Component(setup["mock_dependency"])
-        
+
         # When/Then
         with pytest.raises(ValueError, match="Input cannot be empty"):
             component.process({})
-    
+
     @pytest.mark.parametrize("invalid_input,expected_error", [
         (None, "Input cannot be None"),
         ({"id": -1}, "ID must be positive"),
@@ -521,7 +519,7 @@ class TestComponent:
     def test_invalid_inputs(self, setup, invalid_input, expected_error):
         \"\"\"Test various invalid input scenarios.\"\"\"
         component = Component(setup["mock_dependency"])
-        
+
         with pytest.raises(ValueError, match=expected_error):
             component.process(invalid_input)
 """
@@ -536,13 +534,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 @pytest.mark.integration
 class TestAPIIntegration:
     \"\"\"Integration tests for API endpoints.\"\"\"
-    
+
     @pytest.fixture
     async def client(self, app):
         \"\"\"Create test client.\"\"\"
         async with AsyncClient(app=app, base_url="http://test") as client:
             yield client
-    
+
     @pytest.fixture
     async def db_session(self):
         \"\"\"Create test database session.\"\"\"
@@ -551,7 +549,7 @@ class TestAPIIntegration:
             yield session
             # Cleanup after test
             await session.rollback()
-    
+
     async def test_create_resource_integration(self, client, db_session):
         \"\"\"Test creating resource through API with database.\"\"\"
         # Given
@@ -559,15 +557,15 @@ class TestAPIIntegration:
             "name": "Test Resource",
             "description": "Integration test"
         }
-        
+
         # When
         response = await client.post("/api/resources", json=payload)
-        
+
         # Then
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == payload["name"]
-        
+
         # Verify database
         result = await db_session.get(Resource, data["id"])
         assert result is not None
@@ -583,35 +581,35 @@ test.describe('User Authentication Flow', () => {
     test.beforeEach(async ({ page }) => {
         await page.goto('/');
     });
-    
+
     test('complete login flow', async ({ page }) => {
         // Navigate to login
         await page.click('text=Sign In');
         await expect(page).toHaveURL('/login');
-        
+
         // Fill login form
         await page.fill('[name="email"]', 'test@example.com');
         await page.fill('[name="password"]', 'testpassword123');
-        
+
         // Submit form
         await page.click('button[type="submit"]');
-        
+
         // Verify redirect to dashboard
         await expect(page).toHaveURL('/dashboard');
         await expect(page.locator('h1')).toContainText('Welcome');
-        
+
         // Verify user menu
         await expect(page.locator('[data-testid="user-menu"]')).toBeVisible();
     });
-    
+
     test('handle login errors', async ({ page }) => {
         await page.goto('/login');
-        
+
         // Submit with invalid credentials
         await page.fill('[name="email"]', 'wrong@example.com');
         await page.fill('[name="password"]', 'wrongpassword');
         await page.click('button[type="submit"]');
-        
+
         // Verify error message
         await expect(page.locator('.error-message')).toContainText('Invalid credentials');
         await expect(page).toHaveURL('/login');
@@ -628,7 +626,7 @@ import json
 class APIPerformanceTest(HttpUser):
     \"\"\"Performance tests for API endpoints.\"\"\"
     wait_time = between(1, 3)
-    
+
     def on_start(self):
         \"\"\"Setup: authenticate user.\"\"\"
         response = self.client.post("/auth/login", json={
@@ -637,16 +635,16 @@ class APIPerformanceTest(HttpUser):
         })
         self.token = response.json()["token"]
         self.headers = {"Authorization": f"Bearer {self.token}"}
-    
+
     @task(3)
     def get_resources(self):
         \"\"\"Test GET /resources endpoint.\"\"\"
-        with self.client.get("/api/resources", 
+        with self.client.get("/api/resources",
                            headers=self.headers,
                            catch_response=True) as response:
             if response.elapsed.total_seconds() > 1.0:
                 response.failure("Response time > 1s")
-    
+
     @task(1)
     def create_resource(self):
         \"\"\"Test POST /resources endpoint.\"\"\"
@@ -654,7 +652,7 @@ class APIPerformanceTest(HttpUser):
             "name": f"Resource {self.environment.runner.user_count}",
             "value": 100
         }
-        self.client.post("/api/resources", 
+        self.client.post("/api/resources",
                         json=payload,
                         headers=self.headers)
 """
@@ -675,12 +673,12 @@ class APIPerformanceTest(HttpUser):
    - Component logic
    - Utility functions
    - Data transformations
-   
+
 2. **Integration Tests** (20%)
    - API endpoints
    - Database operations
    - External services
-   
+
 3. **E2E Tests** (10%)
    - Critical user journeys
    - Cross-browser compatibility
@@ -703,7 +701,7 @@ class APIPerformanceTest(HttpUser):
 
 
 # Factory function for easy QA Agent creation
-async def create_qa_agent(custom_config: Optional[Dict[str, Any]] = None) -> QAEngineerAgent:
+async def create_qa_agent(custom_config: dict[str, Any] | None = None) -> QAEngineerAgent:
     """Create and initialize a QA Engineer Agent with optional custom configuration."""
 
     config_params = custom_config or {}
@@ -717,13 +715,13 @@ async def create_qa_agent(custom_config: Optional[Dict[str, Any]] = None) -> QAE
 
 # Example usage and testing
 if __name__ == "__main__":
-    
+
     async def test_qa_agent():
         """Test QA Engineer Agent functionality."""
-        
+
         # Create QA Agent
         qa = await create_qa_agent()
-        
+
         # Test creation task
         test_task = EnhancedTask(
             task_type=TaskType.TESTING,
@@ -735,7 +733,7 @@ if __name__ == "__main__":
                 "coverage_target": "90%"
             }
         )
-        
+
         print("🧪 Testing QA Agent - Test Creation")
         result = await qa.process_task(test_task)
         print(f"Success: {result.success}")
@@ -744,14 +742,14 @@ if __name__ == "__main__":
         print(f"Model used: {result.model_used}")
         print("\n" + "="*80)
         print(result.output[:1000] + "..." if len(result.output) > 1000 else result.output)
-        
+
         # Get agent status
         status = qa.get_status()
         print("\n📊 QA Agent Status:")
         print(f"Tasks completed: {status['tasks_completed']}")
         print(f"Success rate: {status['success_rate']:.1%}")
         print(f"Total cost: ${status['total_cost']:.4f}")
-        
+
         await qa.stop()
 
     # Run test

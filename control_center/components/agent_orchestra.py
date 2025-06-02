@@ -4,7 +4,6 @@ Agent Orchestra Panel - Shows all active agents and their status
 
 import asyncio
 import time
-from typing import Dict, Optional
 
 import redis.asyncio as redis
 from redis.exceptions import RedisError
@@ -44,12 +43,12 @@ class AgentInfo:
 class AgentOrchestraPanel(Widget):
     """Panel showing all agents and their current status."""
 
-    agents: reactive[Dict[str, AgentInfo]] = reactive({})
+    agents: reactive[dict[str, AgentInfo]] = reactive({})
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.redis_client: Optional[redis.Redis] = None
-        self.refresh_timer: Optional[Timer] = None
+        self.redis_client: redis.Redis | None = None
+        self.refresh_timer: Timer | None = None
 
     def compose(self) -> ComposeResult:
         """Create the panel layout."""
@@ -164,7 +163,6 @@ class AgentOrchestraPanel(Widget):
             if time.time() - agent.last_seen > 30:
                 agent.status = "offline"
 
-            status_class = f"agent-status-{agent.status}"
 
             table.add_row(
                 agent.get_status_icon(),

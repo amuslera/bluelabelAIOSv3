@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from core.storage.object_store import ObjectStorage, get_object_storage
 
@@ -49,10 +49,10 @@ class VersionInfo:
     created_by: str
     size: int
     checksum: str
-    tags: Dict[str, str]
+    tags: dict[str, str]
     is_latest: bool = False
     is_backup: bool = False
-    change_description: Optional[str] = None
+    change_description: str | None = None
 
 
 @dataclass
@@ -66,7 +66,7 @@ class VersioningConfig:
     retention_days: int = 30
     max_storage_mb: int = 1000
     auto_backup: bool = True
-    preserve_tags: Optional[List[str]] = None  # Tags that prevent deletion
+    preserve_tags: list[str] | None = None  # Tags that prevent deletion
 
 
 class VersionManager:
@@ -81,10 +81,10 @@ class VersionManager:
     - Storage optimization
     """
 
-    def __init__(self, storage: Optional[ObjectStorage] = None):
+    def __init__(self, storage: ObjectStorage | None = None):
         """Initialize version manager."""
         self.storage = storage
-        self.versioning_configs: Dict[str, VersioningConfig] = {}
+        self.versioning_configs: dict[str, VersioningConfig] = {}
 
     async def initialize(self) -> None:
         """Initialize version manager."""
@@ -108,8 +108,8 @@ class VersionManager:
         logger.info(f"Set versioning config for pattern {bucket_pattern}")
 
     async def get_versions(
-        self, bucket_name: str, object_key: str, limit: Optional[int] = None
-    ) -> List[VersionInfo]:
+        self, bucket_name: str, object_key: str, limit: int | None = None
+    ) -> list[VersionInfo]:
         """Get all versions of an object."""
         try:
             # Get all versions from storage
@@ -176,8 +176,8 @@ class VersionManager:
         bucket_name: str,
         object_key: str,
         backup_type: str = "manual",
-        description: Optional[str] = None,
-    ) -> Optional[str]:
+        description: str | None = None,
+    ) -> str | None:
         """Create a backup of the current version."""
         try:
             # Get current object metadata
@@ -188,7 +188,7 @@ class VersionManager:
             backup_key = f"backups/{object_key}/{backup_type}_{timestamp}"
 
             # Copy current version to backup location
-            backup_metadata = await self.storage.copy_object(
+            await self.storage.copy_object(
                 source_bucket=bucket_name,
                 source_key=object_key,
                 dest_bucket=bucket_name,
@@ -275,9 +275,9 @@ class VersionManager:
     async def cleanup_old_versions(
         self,
         bucket_name: str,
-        object_key: Optional[str] = None,
-        config: Optional[VersioningConfig] = None,
-    ) -> Dict[str, Any]:
+        object_key: str | None = None,
+        config: VersioningConfig | None = None,
+    ) -> dict[str, Any]:
         """Clean up old versions based on policy."""
         cleanup_config = config or self._get_versioning_config(bucket_name)
 
@@ -324,8 +324,8 @@ class VersionManager:
         return cleanup_result
 
     async def get_storage_stats(
-        self, bucket_name: str, object_prefix: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self, bucket_name: str, object_prefix: str | None = None
+    ) -> dict[str, Any]:
         """Get storage statistics for versioned objects."""
         try:
             objects = await self.storage.list_objects(
@@ -419,7 +419,7 @@ class VersionManager:
 
     async def _cleanup_object_versions(
         self, bucket_name: str, object_key: str, config: VersioningConfig
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """Clean up versions for a specific object."""
         versions = await self.get_versions(bucket_name, object_key)
 
@@ -551,7 +551,7 @@ class VersionManager:
 
 
 # Global version manager instance
-version_manager: Optional[VersionManager] = None
+version_manager: VersionManager | None = None
 
 
 async def get_version_manager() -> VersionManager:

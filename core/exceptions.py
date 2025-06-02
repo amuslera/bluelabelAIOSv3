@@ -7,14 +7,14 @@ Provides consistent error handling patterns, logging, and recovery mechanisms.
 import logging
 import traceback
 from enum import Enum
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
 class ErrorSeverity(Enum):
     """Error severity levels."""
-    
+
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -23,7 +23,7 @@ class ErrorSeverity(Enum):
 
 class ErrorCategory(Enum):
     """Error categories for classification."""
-    
+
     CONFIGURATION = "configuration"
     AUTHENTICATION = "authentication"
     AUTHORIZATION = "authorization"
@@ -41,31 +41,31 @@ class ErrorCategory(Enum):
 
 class ErrorContext(BaseModel):
     """Context information for errors."""
-    
-    agent_id: Optional[str] = None
-    task_id: Optional[str] = None
-    conversation_id: Optional[str] = None
-    request_id: Optional[str] = None
-    user_id: Optional[str] = None
-    provider_name: Optional[str] = None
-    model_id: Optional[str] = None
-    timestamp: Optional[str] = None
-    additional_data: Dict[str, Any] = Field(default_factory=dict)
+
+    agent_id: str | None = None
+    task_id: str | None = None
+    conversation_id: str | None = None
+    request_id: str | None = None
+    user_id: str | None = None
+    provider_name: str | None = None
+    model_id: str | None = None
+    timestamp: str | None = None
+    additional_data: dict[str, Any] = Field(default_factory=dict)
 
 
 class AIOSError(Exception):
     """Base exception for all AIOSv3 errors."""
-    
+
     def __init__(
         self,
         message: str,
-        error_code: Optional[str] = None,
+        error_code: str | None = None,
         category: ErrorCategory = ErrorCategory.UNKNOWN,
         severity: ErrorSeverity = ErrorSeverity.MEDIUM,
-        context: Optional[ErrorContext] = None,
-        cause: Optional[Exception] = None,
+        context: ErrorContext | None = None,
+        cause: Exception | None = None,
         recoverable: bool = True,
-        retry_after: Optional[float] = None,
+        retry_after: float | None = None,
     ):
         super().__init__(message)
         self.message = message
@@ -76,11 +76,11 @@ class AIOSError(Exception):
         self.cause = cause
         self.recoverable = recoverable
         self.retry_after = retry_after
-        
+
         # Capture stack trace
         self.stack_trace = traceback.format_exc()
-        
-    def to_dict(self) -> Dict[str, Any]:
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert error to dictionary for logging/serialization."""
         return {
             "error_code": self.error_code,
@@ -93,7 +93,7 @@ class AIOSError(Exception):
             "cause": str(self.cause) if self.cause else None,
             "stack_trace": self.stack_trace,
         }
-        
+
     def __str__(self) -> str:
         return f"[{self.error_code}] {self.message}"
 
@@ -101,7 +101,7 @@ class AIOSError(Exception):
 # Configuration Errors
 class ConfigurationError(AIOSError):
     """Configuration-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -125,7 +125,7 @@ class InvalidConfigurationError(ConfigurationError):
 # Authentication & Authorization Errors
 class AuthenticationError(AIOSError):
     """Authentication-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -138,7 +138,7 @@ class AuthenticationError(AIOSError):
 
 class AuthorizationError(AIOSError):
     """Authorization-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -152,7 +152,7 @@ class AuthorizationError(AIOSError):
 # Validation Errors
 class ValidationError(AIOSError):
     """Data validation errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -166,7 +166,7 @@ class ValidationError(AIOSError):
 # Network & Communication Errors
 class NetworkError(AIOSError):
     """Network-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -180,7 +180,7 @@ class NetworkError(AIOSError):
 
 class TimeoutError(AIOSError):
     """Timeout-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -195,7 +195,7 @@ class TimeoutError(AIOSError):
 # LLM Provider Errors
 class LLMProviderError(AIOSError):
     """LLM provider-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -214,7 +214,7 @@ class ModelNotAvailableError(LLMProviderError):
 
 class RateLimitError(LLMProviderError):
     """Rate limit exceeded."""
-    
+
     def __init__(self, message: str, retry_after: float = 60.0, **kwargs):
         super().__init__(
             message,
@@ -225,7 +225,7 @@ class RateLimitError(LLMProviderError):
 
 class InsufficientCreditsError(LLMProviderError):
     """Insufficient credits/quota."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -237,7 +237,7 @@ class InsufficientCreditsError(LLMProviderError):
 # Agent & Task Errors
 class AgentError(AIOSError):
     """Agent-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -259,7 +259,7 @@ class AgentCommunicationError(AgentError):
 
 class AgentNotFoundError(AgentError):
     """Agent not found."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -271,7 +271,7 @@ class AgentNotFoundError(AgentError):
 # Resource Errors
 class ResourceError(AIOSError):
     """Resource-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -294,7 +294,7 @@ class DiskSpaceError(ResourceError):
 # Database Errors
 class DatabaseError(AIOSError):
     """Database-related errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -314,7 +314,7 @@ class ConnectionError(DatabaseError):
 # External API Errors
 class ExternalAPIError(AIOSError):
     """External API errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -329,7 +329,7 @@ class ExternalAPIError(AIOSError):
 # Business Logic Errors
 class BusinessLogicError(AIOSError):
     """Business logic errors."""
-    
+
     def __init__(self, message: str, **kwargs):
         super().__init__(
             message,
@@ -343,19 +343,19 @@ class BusinessLogicError(AIOSError):
 # Error Handler Class
 class ErrorHandler:
     """Centralized error handling and logging."""
-    
-    def __init__(self, logger: Optional[logging.Logger] = None):
+
+    def __init__(self, logger: logging.Logger | None = None):
         self.logger = logger or logging.getLogger(__name__)
-        self.error_counts: Dict[str, int] = {}
-        
+        self.error_counts: dict[str, int] = {}
+
     def handle_error(
         self,
-        error: Union[Exception, AIOSError],
-        context: Optional[ErrorContext] = None,
+        error: Exception | AIOSError,
+        context: ErrorContext | None = None,
         reraise: bool = True,
-    ) -> Optional[AIOSError]:
+    ) -> AIOSError | None:
         """Handle an error with logging and optional re-raising."""
-        
+
         # Convert to AIOSError if needed
         if isinstance(error, AIOSError):
             aios_error = error
@@ -365,28 +365,28 @@ class ErrorHandler:
                 cause=error,
                 context=context,
             )
-            
+
         # Update context if provided
         if context:
             aios_error.context = context
-            
+
         # Log the error
         self._log_error(aios_error)
-        
+
         # Track error counts
         self._track_error(aios_error)
-        
+
         # Re-raise if requested
         if reraise:
             raise aios_error
-            
+
         return aios_error
-        
+
     def _log_error(self, error: AIOSError) -> None:
         """Log an error with appropriate level."""
-        
+
         log_data = error.to_dict()
-        
+
         if error.severity == ErrorSeverity.CRITICAL:
             self.logger.critical("Critical error occurred", extra=log_data)
         elif error.severity == ErrorSeverity.HIGH:
@@ -395,17 +395,17 @@ class ErrorHandler:
             self.logger.warning("Medium severity error occurred", extra=log_data)
         else:
             self.logger.info("Low severity error occurred", extra=log_data)
-            
+
     def _track_error(self, error: AIOSError) -> None:
         """Track error counts for monitoring."""
-        
+
         key = f"{error.category.value}:{error.error_code}"
         self.error_counts[key] = self.error_counts.get(key, 0) + 1
-        
-    def get_error_stats(self) -> Dict[str, int]:
+
+    def get_error_stats(self) -> dict[str, int]:
         """Get error statistics."""
         return self.error_counts.copy()
-        
+
     def reset_error_stats(self) -> None:
         """Reset error statistics."""
         self.error_counts.clear()
@@ -416,10 +416,10 @@ global_error_handler = ErrorHandler()
 
 
 def handle_error(
-    error: Union[Exception, AIOSError],
-    context: Optional[ErrorContext] = None,
+    error: Exception | AIOSError,
+    context: ErrorContext | None = None,
     reraise: bool = True,
-) -> Optional[AIOSError]:
+) -> AIOSError | None:
     """Handle an error using the global error handler."""
     return global_error_handler.handle_error(error, context, reraise)
 
@@ -432,7 +432,7 @@ def error_handler(
     reraise: bool = True,
 ):
     """Decorator for automatic error handling."""
-    
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -450,7 +450,7 @@ def error_handler(
                     cause=e,
                 )
                 return handle_error(aios_error, reraise=reraise)
-                
+
         async def async_wrapper(*args, **kwargs):
             try:
                 return await func(*args, **kwargs)
@@ -467,37 +467,37 @@ def error_handler(
                     cause=e,
                 )
                 return handle_error(aios_error, reraise=reraise)
-                
+
         import asyncio
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         else:
             return wrapper
-            
+
     return decorator
 
 
 # Circuit breaker for resilient error handling
 class CircuitBreaker:
     """Circuit breaker pattern for error resilience."""
-    
+
     def __init__(
         self,
         failure_threshold: int = 5,
         recovery_timeout: float = 60.0,
-        expected_exception: Type[Exception] = Exception,
+        expected_exception: type[Exception] = Exception,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.expected_exception = expected_exception
-        
+
         self.failure_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.state = "closed"  # closed, open, half-open
-        
+
     def call(self, func, *args, **kwargs):
         """Call function with circuit breaker protection."""
-        
+
         if self.state == "open":
             if self._should_attempt_reset():
                 self.state = "half-open"
@@ -507,15 +507,15 @@ class CircuitBreaker:
                     category=ErrorCategory.RESOURCE_EXHAUSTION,
                     severity=ErrorSeverity.HIGH,
                 )
-                
+
         try:
             result = func(*args, **kwargs)
             self._on_success()
             return result
-        except self.expected_exception as e:
+        except self.expected_exception:
             self._on_failure()
             raise
-            
+
     def _should_attempt_reset(self) -> bool:
         """Check if we should attempt to reset the circuit breaker."""
         import time
@@ -523,17 +523,17 @@ class CircuitBreaker:
             self.last_failure_time is not None and
             time.time() - self.last_failure_time >= self.recovery_timeout
         )
-        
+
     def _on_success(self) -> None:
         """Handle successful call."""
         self.failure_count = 0
         self.state = "closed"
-        
+
     def _on_failure(self) -> None:
         """Handle failed call."""
         import time
         self.failure_count += 1
         self.last_failure_time = time.time()
-        
+
         if self.failure_count >= self.failure_threshold:
             self.state = "open"

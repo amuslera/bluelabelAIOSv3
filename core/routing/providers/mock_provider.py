@@ -10,7 +10,6 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from datetime import datetime
-from typing import List
 
 from .base import (
     LLMProvider,
@@ -37,7 +36,7 @@ class MockConfig(ProviderConfig):
 class MockProvider(LLMProvider):
     """
     Mock LLM provider that generates simulated responses.
-    
+
     Useful for testing, development, and demonstrations when
     real API keys are not available.
     """
@@ -136,7 +135,7 @@ class MockProvider(LLMProvider):
             yield word + " "
             await asyncio.sleep(0.1)  # Simulate streaming delay
 
-    async def get_models(self) -> List[ModelInfo]:
+    async def get_models(self) -> list[ModelInfo]:
         """Get list of mock models."""
         return list(self._models.values())
 
@@ -206,22 +205,22 @@ After evaluating the messaging architecture options for AIOSv3's real-time agent
 
 ## Implementation Considerations
 
-**Scalability**: 
+**Scalability**:
 - gRPC connection pooling supports 100+ concurrent agents
 - Horizontal scaling via load balancers with session affinity
 - Message queuing for offline agent handling
 
-**Performance**: 
+**Performance**:
 - Expected latency: 50-200ms for complex routing decisions
 - Throughput: 10,000+ messages/second per service instance
 - Connection overhead: ~2MB memory per active agent
 
-**Operational**: 
+**Operational**:
 - Docker containers with health checks
 - Kubernetes service mesh for traffic management
 - Prometheus metrics for monitoring
 
-**Cost**: 
+**Cost**:
 - Infrastructure: ~$200/month for 100 agents
 - Development: 4-6 weeks implementation
 - Operational overhead: Low (existing DevOps practices)
@@ -281,22 +280,22 @@ The code demonstrates solid engineering practices with good separation of concer
 
 ## Architecture Impact
 
-**Design Patterns**: 
+**Design Patterns**:
 - Excellent use of Strategy pattern for routing
 - Factory pattern for agent creation is well-implemented
 - Consider adding Observer pattern for event notifications
 
-**Scalability**: 
+**Scalability**:
 - Current design supports horizontal scaling
 - Agent state management is stateless-friendly
 - Message queuing abstraction allows for future optimization
 
-**Maintainability**: 
+**Maintainability**:
 - Good interface abstractions
 - Configuration externalization needed
 - Documentation could be enhanced
 
-**Technical Debt**: 
+**Technical Debt**:
 - Minimal debt introduction
 - Some hardcoded values should be configurable
 - Legacy compatibility maintained appropriately
@@ -364,7 +363,7 @@ AIOSv3 represents a significant evolution in AI agent platforms. Our strategic f
 
 **Investment Plan**:
 - 2 senior engineers: Distributed systems expertise
-- 1 ML engineer: Agent optimization and routing intelligence  
+- 1 ML engineer: Agent optimization and routing intelligence
 - DevOps engineer: Production operations and reliability
 
 ### Technology Roadmap

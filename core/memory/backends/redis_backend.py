@@ -9,7 +9,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import redis.asyncio as redis
 from redis.asyncio.retry import Retry
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 class RedisMemoryBackend(MemoryBackend):
     """
     Redis-based memory backend for fast storage and retrieval.
-    
+
     Features:
     - Fast key-value storage for memories and conversations
     - Optional vector search with Redis Stack
@@ -41,7 +41,7 @@ class RedisMemoryBackend(MemoryBackend):
     - Clustering support for high availability
     """
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """Initialize Redis backend."""
         super().__init__(config)
 
@@ -128,7 +128,7 @@ class RedisMemoryBackend(MemoryBackend):
         logger.debug(f"Stored memory {entry.id}")
         return entry.id
 
-    async def get_memory(self, memory_id: str) -> Optional[MemoryEntry]:
+    async def get_memory(self, memory_id: str) -> MemoryEntry | None:
         """Retrieve a memory entry by ID."""
         memory_key = f"{self.memory_prefix}{memory_id}"
 
@@ -201,7 +201,7 @@ class RedisMemoryBackend(MemoryBackend):
 
         return bool(deleted)
 
-    async def search_memories(self, query: MemoryQuery) -> List[MemorySearchResult]:
+    async def search_memories(self, query: MemoryQuery) -> list[MemorySearchResult]:
         """Search for memories matching the query."""
         start_time = time.time()
 
@@ -236,7 +236,7 @@ class RedisMemoryBackend(MemoryBackend):
         logger.debug(f"Stored conversation {context.conversation_id}")
         return context.conversation_id
 
-    async def get_conversation(self, conversation_id: str) -> Optional[ConversationContext]:
+    async def get_conversation(self, conversation_id: str) -> ConversationContext | None:
         """Retrieve conversation context."""
         conv_key = f"{self.conversation_prefix}{conversation_id}"
 
@@ -405,7 +405,7 @@ class RedisMemoryBackend(MemoryBackend):
         async for key in self.redis_client.scan_iter(f"{self.index_prefix}*"):
             await self.redis_client.srem(key, memory_id)
 
-    async def _vector_search(self, query: MemoryQuery) -> List[MemorySearchResult]:
+    async def _vector_search(self, query: MemoryQuery) -> list[MemorySearchResult]:
         """Perform vector similarity search."""
         # This is a placeholder - actual implementation would need
         # to generate embeddings for the query text and perform
@@ -414,7 +414,7 @@ class RedisMemoryBackend(MemoryBackend):
         logger.warning("Vector search not fully implemented")
         return await self._index_search(query)
 
-    async def _index_search(self, query: MemoryQuery) -> List[MemorySearchResult]:
+    async def _index_search(self, query: MemoryQuery) -> list[MemorySearchResult]:
         """Perform traditional index-based search."""
         candidate_ids = set()
 

@@ -5,19 +5,17 @@ This module provides the orchestration framework for managing coding agents
 as if they were junior developers reporting to a technical lead (Claude/CTO).
 """
 
-import asyncio
-import json
 import logging
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 from agents.base.enhanced_agent import EnhancedTask, EnhancedTaskResult
-from agents.base.types import TaskType, Priority
-from agents.specialists.backend_agent import BackendDeveloperAgent, create_backend_agent
+from agents.base.types import Priority, TaskType
+from agents.specialists.backend_agent import create_backend_agent
 
 logger = logging.getLogger(__name__)
 
@@ -51,19 +49,19 @@ class TaskAssignment(BaseModel):
     task: EnhancedTask
     status: TaskStatus = TaskStatus.PLANNED
     assigned_at: datetime = Field(default_factory=datetime.utcnow)
-    started_at: Optional[datetime] = None
-    submitted_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    
+    started_at: datetime | None = None
+    submitted_at: datetime | None = None
+    completed_at: datetime | None = None
+
     # Results and review
-    result: Optional[EnhancedTaskResult] = None
-    review_notes: List[str] = Field(default_factory=list)
-    review_outcome: Optional[ReviewOutcome] = None
+    result: EnhancedTaskResult | None = None
+    review_notes: list[str] = Field(default_factory=list)
+    review_outcome: ReviewOutcome | None = None
     revision_count: int = 0
-    
+
     # Metrics
-    estimated_hours: Optional[float] = None
-    actual_hours: Optional[float] = None
+    estimated_hours: float | None = None
+    actual_hours: float | None = None
 
 
 class CodeReview(BaseModel):
@@ -72,8 +70,8 @@ class CodeReview(BaseModel):
     reviewer: str = "ARCH-CTO"
     outcome: ReviewOutcome
     summary: str
-    detailed_feedback: List[str] = Field(default_factory=list)
-    security_issues: List[str] = Field(default_factory=list)
+    detailed_feedback: list[str] = Field(default_factory=list)
+    security_issues: list[str] = Field(default_factory=list)
     quality_score: int = Field(ge=1, le=10)  # 1-10 scale
     requires_revision: bool = False
     approval_notes: str = ""
@@ -86,8 +84,8 @@ class OrchestrationMetrics(BaseModel):
     completed_tasks: int = 0
     average_completion_time: float = 0.0
     average_review_cycles: float = 0.0
-    agent_performance: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
-    quality_trends: List[float] = Field(default_factory=list)
+    agent_performance: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    quality_trends: list[float] = Field(default_factory=list)
 
 
 class ARCHCTOOrchestrator:
@@ -100,11 +98,11 @@ class ARCHCTOOrchestrator:
 
     def __init__(self):
         self.orchestrator_id = f"arch_cto_{uuid.uuid4().hex[:8]}"
-        self.active_agents: Dict[str, Any] = {}
-        self.task_assignments: Dict[str, TaskAssignment] = {}
-        self.completed_reviews: List[CodeReview] = []
+        self.active_agents: dict[str, Any] = {}
+        self.task_assignments: dict[str, TaskAssignment] = {}
+        self.completed_reviews: list[CodeReview] = []
         self.metrics = OrchestrationMetrics()
-        
+
         # Orchestration configuration
         self.max_revision_cycles = 3
         self.quality_threshold = 7  # Minimum quality score for approval
@@ -113,12 +111,12 @@ class ARCHCTOOrchestrator:
     async def initialize(self):
         """Initialize the orchestrator and prepare agent pool."""
         logger.info("🎯 Initializing ARCH-CTO Orchestrator...")
-        
+
         # Initialize available agents
         # Start with Backend Agent
         backend_agent = await create_backend_agent()
         self.active_agents["backend"] = backend_agent
-        
+
         logger.info(f"✅ ARCH-CTO Orchestrator initialized with {len(self.active_agents)} agents")
 
     async def assign_task(
@@ -128,7 +126,7 @@ class ARCHCTOOrchestrator:
         agent_type: str = "backend",
         complexity: int = 5,
         priority: Priority = Priority.MEDIUM,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: dict[str, Any] | None = None
     ) -> str:
         """
         Assign a task to an appropriate agent.
@@ -144,7 +142,7 @@ class ARCHCTOOrchestrator:
         Returns:
             task_id: Unique identifier for tracking
         """
-        
+
         # Create enhanced task
         task = EnhancedTask(
             task_type=task_type,
@@ -153,13 +151,13 @@ class ARCHCTOOrchestrator:
             priority=priority,
             metadata=metadata or {}
         )
-        
+
         # Get target agent
         if agent_type not in self.active_agents:
             raise ValueError(f"Agent type '{agent_type}' not available. Active agents: {list(self.active_agents.keys())}")
-        
+
         agent = self.active_agents[agent_type]
-        
+
         # Create assignment
         assignment = TaskAssignment(
             agent_id=agent.agent_id,
@@ -168,14 +166,14 @@ class ARCHCTOOrchestrator:
             status=TaskStatus.ASSIGNED,
             estimated_hours=self._estimate_task_hours(complexity, task_type)
         )
-        
+
         self.task_assignments[assignment.task_id] = assignment
         self.metrics.total_tasks += 1
-        
+
         logger.info(f"📋 Task assigned to {agent_type} agent: {assignment.task_id}")
         logger.info(f"   Task: {task_description[:100]}...")
         logger.info(f"   Complexity: {complexity}/10, Priority: {priority.value}")
-        
+
         return assignment.task_id
 
     async def execute_task(self, task_id: str) -> EnhancedTaskResult:
@@ -188,36 +186,36 @@ class ARCHCTOOrchestrator:
         Returns:
             Task execution result
         """
-        
+
         if task_id not in self.task_assignments:
             raise ValueError(f"Task {task_id} not found")
-        
+
         assignment = self.task_assignments[task_id]
         agent = self.active_agents[assignment.agent_type]
-        
+
         # Update status
         assignment.status = TaskStatus.IN_PROGRESS
         assignment.started_at = datetime.utcnow()
-        
+
         logger.info(f"🚀 Executing task {task_id} with {assignment.agent_type} agent...")
-        
+
         try:
             # Execute task
             result = await agent.process_task(assignment.task)
-            
+
             # Update assignment
             assignment.result = result
             assignment.status = TaskStatus.SUBMITTED
             assignment.submitted_at = datetime.utcnow()
-            
+
             if assignment.started_at:
                 assignment.actual_hours = (assignment.submitted_at - assignment.started_at).total_seconds() / 3600
-            
+
             logger.info(f"✅ Task {task_id} submitted by {assignment.agent_type} agent")
             logger.info(f"   Success: {result.success}, Cost: ${result.cost:.4f}")
-            
+
             return result
-            
+
         except Exception as e:
             assignment.status = TaskStatus.FAILED
             logger.error(f"❌ Task {task_id} failed: {str(e)}")
@@ -233,29 +231,29 @@ class ARCHCTOOrchestrator:
         Returns:
             Code review result
         """
-        
+
         if task_id not in self.task_assignments:
             raise ValueError(f"Task {task_id} not found")
-        
+
         assignment = self.task_assignments[task_id]
-        
+
         if assignment.status != TaskStatus.SUBMITTED:
             raise ValueError(f"Task {task_id} is not ready for review (status: {assignment.status})")
-        
+
         if not assignment.result:
             raise ValueError(f"Task {task_id} has no result to review")
-        
+
         assignment.status = TaskStatus.UNDER_REVIEW
-        
+
         logger.info(f"🔍 Reviewing task {task_id}...")
-        
+
         # Perform comprehensive code review
         review = await self._perform_code_review(assignment)
-        
+
         # Update assignment based on review
         assignment.review_notes.append(review.summary)
         assignment.review_outcome = review.outcome
-        
+
         if review.requires_revision:
             assignment.status = TaskStatus.NEEDS_REVISION
             assignment.revision_count += 1
@@ -265,10 +263,10 @@ class ARCHCTOOrchestrator:
             assignment.completed_at = datetime.utcnow()
             self.metrics.completed_tasks += 1
             logger.info(f"✅ Task {task_id} approved!")
-        
+
         self.completed_reviews.append(review)
         self.metrics.quality_trends.append(review.quality_score)
-        
+
         return review
 
     async def request_revision(self, task_id: str, revision_notes: str) -> str:
@@ -282,20 +280,20 @@ class ARCHCTOOrchestrator:
         Returns:
             New task_id for the revision
         """
-        
+
         if task_id not in self.task_assignments:
             raise ValueError(f"Task {task_id} not found")
-        
+
         assignment = self.task_assignments[task_id]
-        
+
         if assignment.revision_count >= self.max_revision_cycles:
             logger.warning(f"⚠️ Task {task_id} exceeded max revision cycles ({self.max_revision_cycles})")
             assignment.status = TaskStatus.FAILED
             return task_id
-        
+
         # Create revision task
         revised_prompt = f"{assignment.task.prompt}\n\nREVISION NOTES:\n{revision_notes}"
-        
+
         revision_task_id = await self.assign_task(
             task_description=revised_prompt,
             task_type=assignment.task.task_type,
@@ -304,13 +302,13 @@ class ARCHCTOOrchestrator:
             priority=assignment.task.priority,
             metadata=assignment.task.metadata
         )
-        
+
         # Link revision to original
         revision_assignment = self.task_assignments[revision_task_id]
         revision_assignment.revision_count = assignment.revision_count
-        
+
         logger.info(f"🔄 Revision requested for task {task_id} -> {revision_task_id}")
-        
+
         return revision_task_id
 
     async def _perform_code_review(self, assignment: TaskAssignment) -> CodeReview:
@@ -323,7 +321,7 @@ class ARCHCTOOrchestrator:
         Returns:
             Code review result
         """
-        
+
         result = assignment.result
         if not result or not result.output:
             return CodeReview(
@@ -333,54 +331,54 @@ class ARCHCTOOrchestrator:
                 quality_score=1,
                 requires_revision=True
             )
-        
+
         # Analyze the code/output
         feedback = []
         security_issues = []
         quality_score = 10  # Start with perfect score and deduct
-        
+
         output = result.output.lower()
-        
+
         # Check for basic quality indicators
         if "def " not in output and "class " not in output and "async def" not in output:
             feedback.append("No function or class definitions found - may be incomplete implementation")
             quality_score -= 2
-        
+
         # Security checks
         if "password" in output and "hash" not in output:
             security_issues.append("Password handling without proper hashing")
             quality_score -= 3
-        
+
         if "api_key" in output or "secret" in output:
             security_issues.append("Potential hardcoded secrets")
             quality_score -= 2
-        
+
         # Quality checks
         if "try:" not in output and "except" not in output:
             feedback.append("Missing error handling")
             quality_score -= 1
-        
+
         if "test" not in output:
             feedback.append("No tests provided")
             quality_score -= 2
-        
+
         if len(result.output) < 200:
             feedback.append("Output seems too brief for the task complexity")
             quality_score -= 1
-        
+
         # Check for proper structure
         if assignment.task.task_type == TaskType.CODE_GENERATION:
             if "@router" not in output and "@app" not in output:
                 feedback.append("Missing FastAPI router or app decorators")
                 quality_score -= 2
-            
+
             if "response_model" not in output:
                 feedback.append("Missing response model specification")
                 quality_score -= 1
-        
+
         # Determine outcome
         requires_revision = quality_score < self.quality_threshold or len(security_issues) > 0
-        
+
         if quality_score >= 9 and not security_issues:
             outcome = ReviewOutcome.APPROVED
         elif quality_score >= 7 and not security_issues:
@@ -389,9 +387,9 @@ class ARCHCTOOrchestrator:
             outcome = ReviewOutcome.NEEDS_MAJOR_CHANGES
         else:
             outcome = ReviewOutcome.REJECTED
-        
+
         summary = self._generate_review_summary(quality_score, feedback, security_issues, outcome)
-        
+
         return CodeReview(
             task_id=assignment.task_id,
             outcome=outcome,
@@ -406,39 +404,39 @@ class ARCHCTOOrchestrator:
     def _generate_review_summary(
         self,
         quality_score: int,
-        feedback: List[str],
-        security_issues: List[str],
+        feedback: list[str],
+        security_issues: list[str],
         outcome: ReviewOutcome
     ) -> str:
         """Generate human-readable review summary."""
-        
+
         summary_parts = [f"Code quality score: {max(1, quality_score)}/10"]
-        
+
         if security_issues:
             summary_parts.append(f"⚠️ {len(security_issues)} security issue(s) found")
-        
+
         if feedback:
             summary_parts.append(f"📝 {len(feedback)} improvement(s) suggested")
-        
+
         summary_parts.append(f"Decision: {outcome.value.replace('_', ' ').title()}")
-        
+
         return " | ".join(summary_parts)
 
     def _estimate_task_hours(self, complexity: int, task_type: TaskType) -> float:
         """Estimate task completion time in hours."""
-        
+
         base_hours = {
             TaskType.CODE_GENERATION: 2.0,
             TaskType.SYSTEM_DESIGN: 4.0,
             TaskType.TESTING: 2.5,
         }
-        
+
         base = base_hours.get(task_type, 2.0)
         complexity_multiplier = complexity / 5.0  # Scale complexity to multiplier
-        
+
         return base * complexity_multiplier
 
-    def _get_review_checklist(self) -> List[str]:
+    def _get_review_checklist(self) -> list[str]:
         """Get standardized code review checklist."""
         return [
             "Code follows project style guidelines",
@@ -453,14 +451,14 @@ class ARCHCTOOrchestrator:
             "API responses are consistent"
         ]
 
-    def get_task_status(self, task_id: str) -> Dict[str, Any]:
+    def get_task_status(self, task_id: str) -> dict[str, Any]:
         """Get detailed status of a specific task."""
-        
+
         if task_id not in self.task_assignments:
             return {"error": f"Task {task_id} not found"}
-        
+
         assignment = self.task_assignments[task_id]
-        
+
         status_info = {
             "task_id": task_id,
             "status": assignment.status.value,
@@ -471,7 +469,7 @@ class ARCHCTOOrchestrator:
             "actual_hours": assignment.actual_hours,
             "revision_count": assignment.revision_count,
         }
-        
+
         if assignment.result:
             status_info.update({
                 "success": assignment.result.success,
@@ -479,16 +477,16 @@ class ARCHCTOOrchestrator:
                 "model_used": assignment.result.model_used,
                 "execution_time": assignment.result.execution_time
             })
-        
+
         if assignment.review_outcome:
             status_info["review_outcome"] = assignment.review_outcome.value
             status_info["review_notes"] = assignment.review_notes
-        
+
         return status_info
 
     def get_orchestration_metrics(self) -> OrchestrationMetrics:
         """Get comprehensive orchestration metrics."""
-        
+
         # Update metrics
         if self.task_assignments:
             completion_times = [
@@ -496,23 +494,23 @@ class ARCHCTOOrchestrator:
                 for a in self.task_assignments.values()
                 if a.completed_at and a.assigned_at
             ]
-            
+
             if completion_times:
                 self.metrics.average_completion_time = sum(completion_times) / len(completion_times)
-            
+
             revision_counts = [a.revision_count for a in self.task_assignments.values()]
             if revision_counts:
                 self.metrics.average_review_cycles = sum(revision_counts) / len(revision_counts)
-        
+
         return self.metrics
 
     async def shutdown(self):
         """Shutdown orchestrator and cleanup resources."""
         logger.info("🔄 Shutting down ARCH-CTO Orchestrator...")
-        
+
         for agent in self.active_agents.values():
             await agent.stop()
-        
+
         logger.info("✅ ARCH-CTO Orchestrator shutdown complete")
 
 

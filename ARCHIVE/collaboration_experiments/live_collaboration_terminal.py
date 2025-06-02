@@ -11,7 +11,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Load environment variables
 from dotenv import load_dotenv
@@ -33,8 +33,8 @@ class CollaborationTerminal:
     """Interactive terminal for three-way collaboration."""
 
     def __init__(self):
-        self.cto_agent: Optional[CTOAgent] = None
-        self.conversation_history: List[Dict[str, Any]] = []
+        self.cto_agent: CTOAgent | None = None
+        self.conversation_history: list[dict[str, Any]] = []
         self.session_start = datetime.now()
         self.total_cost = 0.0
 
@@ -64,7 +64,7 @@ class CollaborationTerminal:
         else:
             print("─" * 80)
 
-    def print_message(self, speaker: str, message: str, metadata: Dict[str, Any] = None):
+    def print_message(self, speaker: str, message: str, metadata: dict[str, Any] = None):
         """Print a formatted message in the conversation."""
         timestamp = datetime.now().strftime("%H:%M:%S")
 
@@ -164,7 +164,7 @@ class CollaborationTerminal:
             print(f"❌ Failed to setup CTO Agent: {e}")
             return False
 
-    def add_to_history(self, speaker: str, message: str, metadata: Dict[str, Any] = None):
+    def add_to_history(self, speaker: str, message: str, metadata: dict[str, Any] = None):
         """Add message to conversation history."""
         self.conversation_history.append({
             "timestamp": datetime.now(),

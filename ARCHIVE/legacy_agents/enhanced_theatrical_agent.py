@@ -16,7 +16,7 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 
 # Define agent capabilities
@@ -128,7 +128,7 @@ class EnhancedTheatricalAgent:
     70% faster but with strategic pauses and progress visualization.
     """
 
-    def __init__(self, agent_id: str, name: str, capabilities: List[str],
+    def __init__(self, agent_id: str, name: str, capabilities: list[str],
                  llm_config: dict, knowledge_base: dict = None):
         """Initialize enhanced theatrical agent."""
         self.agent_id = agent_id
@@ -259,7 +259,7 @@ class EnhancedTheatricalAgent:
         self.print_colored("```")
         await asyncio.sleep(0.5)
 
-    async def make_decision(self, decision: str, options: List[Dict[str, Any]],
+    async def make_decision(self, decision: str, options: list[dict[str, Any]],
                           choice: str, reasoning: str):
         """Show decision making process quickly."""
         await self.phase_transition(f"Decision: {decision}", "🤔")
@@ -340,7 +340,7 @@ class EnhancedTheatricalAgent:
 
 
 # Factory function
-def create_enhanced_agent(role: str, capabilities: List[str],
+def create_enhanced_agent(role: str, capabilities: list[str],
                          llm_config: dict) -> EnhancedTheatricalAgent:
     """Create an enhanced theatrical agent."""
     agent_id = f"{role}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"

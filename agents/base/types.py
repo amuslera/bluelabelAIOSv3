@@ -6,7 +6,7 @@ Defines agent lifecycle states, types, capabilities, and metadata schemas.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -93,12 +93,12 @@ class AgentCapability(BaseModel):
 
     name: str
     description: str
-    task_types: List[TaskType]
-    complexity_range: Tuple[int, int] = (
+    task_types: list[TaskType]
+    complexity_range: tuple[int, int] = (
         1,
         10,
     )  # Min and max complexity this capability can handle
-    requires_tools: List[str] = Field(default_factory=list)
+    requires_tools: list[str] = Field(default_factory=list)
     confidence_level: float = Field(default=1.0, ge=0.0, le=1.0)
 
 
@@ -113,8 +113,8 @@ class AgentMetadata(BaseModel):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     owner: str = "system"
-    tags: List[str] = Field(default_factory=list)
-    capabilities: List[AgentCapability] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
+    capabilities: list[AgentCapability] = Field(default_factory=list)
 
 
 class AgentHealth(BaseModel):
@@ -123,9 +123,9 @@ class AgentHealth(BaseModel):
     agent_id: str
     state: AgentState
     last_heartbeat: datetime = Field(default_factory=datetime.utcnow)
-    last_task_completed: Optional[datetime] = None
+    last_task_completed: datetime | None = None
     error_count: int = 0
-    last_error: Optional[str] = None
+    last_error: str | None = None
     memory_usage_mb: float = 0.0
     cpu_usage_percent: float = 0.0
     response_time_ms: float = 0.0
@@ -142,7 +142,7 @@ class AgentStats(BaseModel):
     tasks_failed: int = 0
     average_execution_time: float = 0.0
     total_cost: float = 0.0
-    models_used: Dict[str, int] = Field(default_factory=dict)
+    models_used: dict[str, int] = Field(default_factory=dict)
     success_rate: float = 1.0
     last_active: datetime = Field(default_factory=datetime.utcnow)
 
@@ -152,8 +152,8 @@ class RegistrationRequest(BaseModel):
 
     metadata: AgentMetadata
     initial_state: AgentState = AgentState.INITIALIZING
-    endpoint: Optional[str] = None  # For remote agents
-    config: Dict[str, Any] = Field(default_factory=dict)
+    endpoint: str | None = None  # For remote agents
+    config: dict[str, Any] = Field(default_factory=dict)
 
 
 class RegistrationResponse(BaseModel):
@@ -162,8 +162,8 @@ class RegistrationResponse(BaseModel):
     success: bool
     agent_id: str
     message: str
-    assigned_queues: List[str] = Field(default_factory=list)
-    registry_endpoint: Optional[str] = None
+    assigned_queues: list[str] = Field(default_factory=list)
+    registry_endpoint: str | None = None
 
 
 # Default capabilities for each agent type
@@ -277,7 +277,7 @@ DEFAULT_CAPABILITIES = {
 }
 
 
-def get_default_capabilities(agent_type: AgentType) -> List[AgentCapability]:
+def get_default_capabilities(agent_type: AgentType) -> list[AgentCapability]:
     """Get the default capabilities for an agent type."""
     return DEFAULT_CAPABILITIES.get(
         agent_type, DEFAULT_CAPABILITIES[AgentType.GENERALIST]

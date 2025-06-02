@@ -2,39 +2,40 @@
 Enhanced mock provider with better backend development responses.
 """
 
-from core.routing.providers.mock_provider import MockProvider, MockConfig
+from core.routing.providers.mock_provider import MockProvider
+
 
 class EnhancedMockProvider(MockProvider):
     """Enhanced mock provider with specialized backend responses."""
-    
+
     def _generate_mock_content(self, user_content: str) -> str:
         """Generate enhanced mock content with better backend responses."""
         user_lower = user_content.lower()
-        
+
         # QA/Testing responses (check first as it's most specific)
         if any(word in user_lower for word in ["test", "pytest", "unit test", "qa", "quality", "coverage", "testing"]):
             return self._mock_qa_testing_code()
-        
+
         # DevOps/Infrastructure responses
         elif any(word in user_lower for word in ["terraform", "kubernetes", "docker", "infrastructure", "deployment", "cicd", "monitoring", "devops"]):
             return self._mock_devops_infrastructure()
-        
+
         # Frontend/React/Vue development responses
         elif any(word in user_lower for word in ["react", "vue", "frontend", "component", "ui", "login form", "user interface"]):
             return self._mock_frontend_development()
-        
+
         # Backend/FastAPI development responses
         elif any(word in user_lower for word in ["fastapi", "endpoint", "api", "backend", "post", "users", "profile"]):
             return self._mock_fastapi_development()
-        
+
         # Python code generation
         elif any(word in user_lower for word in ["python", "class", "function", "def", "import"]):
             return self._mock_python_code()
-        
+
         # Default to parent's logic
         else:
             return super()._generate_mock_content(user_content)
-    
+
     def _mock_fastapi_development(self) -> str:
         """Generate mock FastAPI backend development response."""
         return """# 🚀 Backend Code Implementation
@@ -59,14 +60,14 @@ class UserProfileRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, description="User's full name")
     email: str = Field(..., description="User's email address")
     age: Optional[int] = Field(None, ge=0, le=120, description="User's age")
-    
+
     @validator('email')
     def validate_email(cls, v):
-        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
         if not re.match(email_regex, v):
             raise ValueError('Invalid email format')
         return v
-    
+
     @validator('name')
     def validate_name(cls, v):
         if not v.strip():
@@ -87,13 +88,13 @@ class UserProfileResponse(BaseModel):
 async def create_user_profile(user_data: UserProfileRequest):
     \"\"\"
     Create a new user profile.
-    
+
     Args:
         user_data: User profile information
-        
+
     Returns:
         UserProfileResponse: Created user profile with ID and timestamp
-        
+
     Raises:
         HTTPException: If email already exists (example)
     \"\"\"
@@ -101,13 +102,13 @@ async def create_user_profile(user_data: UserProfileRequest):
         # In real implementation, check if email exists in database
         # if await user_exists(user_data.email):
         #     raise HTTPException(status_code=409, detail="Email already registered")
-        
+
         # Generate user ID
         user_id = str(uuid.uuid4())
-        
+
         # In real implementation, save to database
         # await save_user_to_db(user_id, user_data)
-        
+
         # Return response
         return UserProfileResponse(
             user_id=user_id,
@@ -117,7 +118,7 @@ async def create_user_profile(user_data: UserProfileRequest):
             created_at=datetime.utcnow(),
             message="User profile created successfully"
         )
-        
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
@@ -131,7 +132,7 @@ async def get_user_profile(user_id: str):
     # user = await get_user_from_db(user_id)
     # if not user:
     #     raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Mock response for now
     return UserProfileResponse(
         user_id=user_id,
@@ -163,7 +164,7 @@ client = TestClient(app)
 
 class TestUserProfile:
     \"\"\"Test suite for user profile endpoints.\"\"\"
-    
+
     def test_create_user_profile_success(self):
         \"\"\"Test successful user profile creation.\"\"\"
         payload = {
@@ -171,9 +172,9 @@ class TestUserProfile:
             "email": "john.doe@example.com",
             "age": 30
         }
-        
+
         response = client.post("/users/profile", json=payload)
-        
+
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "John Doe"
@@ -182,7 +183,7 @@ class TestUserProfile:
         assert "user_id" in data
         assert "created_at" in data
         assert data["message"] == "User profile created successfully"
-    
+
     def test_create_user_profile_invalid_email(self):
         \"\"\"Test validation with invalid email.\"\"\"
         payload = {
@@ -190,13 +191,13 @@ class TestUserProfile:
             "email": "invalid-email",
             "age": 30
         }
-        
+
         response = client.post("/users/profile", json=payload)
-        
+
         assert response.status_code == 422
         error_data = response.json()
         assert "email" in str(error_data).lower()
-    
+
     def test_create_user_profile_invalid_age(self):
         \"\"\"Test validation with invalid age.\"\"\"
         payload = {
@@ -204,13 +205,13 @@ class TestUserProfile:
             "email": "john.doe@example.com",
             "age": -5
         }
-        
+
         response = client.post("/users/profile", json=payload)
-        
+
         assert response.status_code == 422
         error_data = response.json()
         assert "age" in str(error_data).lower()
-    
+
     def test_create_user_profile_empty_name(self):
         \"\"\"Test validation with empty name.\"\"\"
         payload = {
@@ -218,28 +219,28 @@ class TestUserProfile:
             "email": "john.doe@example.com",
             "age": 30
         }
-        
+
         response = client.post("/users/profile", json=payload)
-        
+
         assert response.status_code == 422
-    
+
     def test_get_user_profile_success(self):
         \"\"\"Test retrieving user profile.\"\"\"
         user_id = "test-user-123"
-        
+
         response = client.get(f"/users/profile/{user_id}")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["user_id"] == user_id
         assert "name" in data
         assert "email" in data
         assert "created_at" in data
-    
+
     def test_health_check(self):
         \"\"\"Test health check endpoint.\"\"\"
         response = client.get("/users/health")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
@@ -248,7 +249,7 @@ class TestUserProfile:
 # Integration test
 class TestUserProfileIntegration:
     \"\"\"Integration tests for user profile workflow.\"\"\"
-    
+
     def test_full_user_creation_workflow(self):
         \"\"\"Test complete user creation workflow.\"\"\"
         # Test data
@@ -257,19 +258,19 @@ class TestUserProfileIntegration:
             {"name": "Bob Johnson", "email": "bob@example.com", "age": 35},
             {"name": "Carol Wilson", "email": "carol@example.com", "age": 28}
         ]
-        
+
         created_users = []
-        
+
         for user_data in users:
             response = client.post("/users/profile", json=user_data)
             assert response.status_code == 201
             created_user = response.json()
             created_users.append(created_user)
-            
+
             # Verify we can retrieve the user
             get_response = client.get(f"/users/profile/{created_user['user_id']}")
             assert get_response.status_code == 200
-        
+
         # Verify all users have unique IDs
         user_ids = [user["user_id"] for user in created_users]
         assert len(set(user_ids)) == len(user_ids)
@@ -296,7 +297,7 @@ Run tests with: `pytest tests/ -v --cov=app --cov-report=html`
 ---
 *Backend Developer Agent | 2025-06-01 18:58*
 """
-    
+
     def _mock_python_code(self) -> str:
         """Generate mock Python code response."""
         return """# 🐍 Python Implementation
@@ -311,15 +312,15 @@ logger = logging.getLogger(__name__)
 
 class DataProcessor:
     \"\"\"Enhanced data processing with async capabilities.\"\"\"
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.processed_count = 0
-        
+
     async def process_batch(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         \"\"\"Process a batch of items asynchronously.\"\"\"
         results = []
-        
+
         for item in items:
             try:
                 processed_item = await self._process_single_item(item)
@@ -327,14 +328,14 @@ class DataProcessor:
                 self.processed_count += 1
             except Exception as e:
                 logger.error(f"Failed to process item {item.get('id', 'unknown')}: {e}")
-                
+
         return results
-    
+
     async def _process_single_item(self, item: Dict[str, Any]) -> Dict[str, Any]:
         \"\"\"Process a single item with validation.\"\"\"
         # Simulate processing time
         await asyncio.sleep(0.1)
-        
+
         return {
             **item,
             "processed_at": datetime.utcnow().isoformat(),
@@ -345,7 +346,7 @@ class DataProcessor:
 
 Production-ready Python code with proper error handling and async patterns.
 """
-    
+
     def _mock_qa_testing_code(self) -> str:
         """Generate mock QA testing code response."""
         return """# 🧪 QA Testing Implementation
@@ -369,7 +370,7 @@ from app.exceptions import AuthenticationError, TokenError
 
 class TestAuthService:
     \"\"\"Comprehensive test suite for authentication service.\"\"\"
-    
+
     @pytest.fixture
     def mock_user_repo(self):
         \"\"\"Mock user repository.\"\"\"
@@ -378,7 +379,7 @@ class TestAuthService:
         repo.create = AsyncMock()
         repo.update = AsyncMock()
         return repo
-    
+
     @pytest.fixture
     def mock_token_store(self):
         \"\"\"Mock token store for session management.\"\"\"
@@ -387,7 +388,7 @@ class TestAuthService:
         store.get_token = AsyncMock()
         store.revoke_token = AsyncMock()
         return store
-    
+
     @pytest.fixture
     def auth_service(self, mock_user_repo, mock_token_store):
         \"\"\"Create auth service with mocked dependencies.\"\"\"
@@ -397,7 +398,7 @@ class TestAuthService:
             jwt_secret="test-secret-key",
             token_expiry_minutes=30
         )
-    
+
     @pytest.fixture
     def valid_user(self):
         \"\"\"Create a valid test user.\"\"\"
@@ -409,7 +410,7 @@ class TestAuthService:
             is_active=True,
             created_at=datetime.utcnow()
         )
-    
+
     # Success Cases
     @pytest.mark.asyncio
     async def test_login_with_valid_credentials(self, auth_service, mock_user_repo, valid_user):
@@ -417,31 +418,31 @@ class TestAuthService:
         # Given
         mock_user_repo.find_by_email.return_value = valid_user
         credentials = {"email": "test@example.com", "password": "validpass123"}
-        
+
         # When
         result = await auth_service.login(credentials)
-        
+
         # Then
         assert result["success"] is True
         assert "token" in result
         assert "user" in result
         assert result["user"]["email"] == "test@example.com"
         mock_user_repo.find_by_email.assert_called_once_with("test@example.com")
-    
+
     @pytest.mark.asyncio
     async def test_token_generation_contains_required_claims(self, auth_service, valid_user):
         \"\"\"Test JWT token contains all required claims.\"\"\"
         # When
         token = auth_service._generate_token(valid_user)
         decoded = jwt.decode(token, "test-secret-key", algorithms=["HS256"])
-        
+
         # Then
         assert decoded["sub"] == "user-123"
         assert decoded["email"] == "test@example.com"
         assert "exp" in decoded
         assert "iat" in decoded
         assert decoded["exp"] > decoded["iat"]
-    
+
     # Error Cases
     @pytest.mark.asyncio
     async def test_login_with_invalid_email(self, auth_service, mock_user_repo):
@@ -449,22 +450,22 @@ class TestAuthService:
         # Given
         mock_user_repo.find_by_email.return_value = None
         credentials = {"email": "nonexistent@example.com", "password": "anypass"}
-        
+
         # When/Then
         with pytest.raises(AuthenticationError, match="Invalid credentials"):
             await auth_service.login(credentials)
-    
+
     @pytest.mark.asyncio
     async def test_login_with_wrong_password(self, auth_service, mock_user_repo, valid_user):
         \"\"\"Test login fails with incorrect password.\"\"\"
         # Given
         mock_user_repo.find_by_email.return_value = valid_user
         credentials = {"email": "test@example.com", "password": "wrongpassword"}
-        
+
         # When/Then
         with pytest.raises(AuthenticationError, match="Invalid credentials"):
             await auth_service.login(credentials)
-    
+
     # Edge Cases
     @pytest.mark.asyncio
     async def test_login_with_empty_credentials(self, auth_service):
@@ -477,12 +478,12 @@ class TestAuthService:
             {},
             None
         ]
-        
+
         # When/Then
         for credentials in test_cases:
             with pytest.raises((AuthenticationError, ValueError)):
                 await auth_service.login(credentials)
-    
+
     @pytest.mark.parametrize("invalid_email", [
         "notanemail",
         "@example.com",
@@ -499,7 +500,7 @@ class TestAuthService:
         \"\"\"Test login rejects various invalid email formats.\"\"\"
         # Given
         credentials = {"email": invalid_email, "password": "password"}
-        
+
         # When/Then
         with pytest.raises((AuthenticationError, ValueError)):
             await auth_service.login(credentials)
@@ -508,23 +509,23 @@ class TestAuthService:
 @pytest.mark.integration
 class TestAuthServiceIntegration:
     \"\"\"Integration tests for authentication service with real dependencies.\"\"\"
-    
+
     @pytest.fixture
     async def real_auth_service(self, test_db, redis_client):
         \"\"\"Create auth service with real dependencies.\"\"\"
         from app.repositories.user_repository import UserRepository
         from app.services.token_store import RedisTokenStore
-        
+
         user_repo = UserRepository(test_db)
         token_store = RedisTokenStore(redis_client)
-        
+
         return AuthService(
             user_repository=user_repo,
             token_store=token_store,
             jwt_secret="integration-test-secret",
             token_expiry_minutes=30
         )
-    
+
     @pytest.mark.asyncio
     async def test_full_authentication_flow(self, real_auth_service):
         \"\"\"Test complete authentication flow: register, login, refresh, logout.\"\"\"
@@ -536,7 +537,7 @@ class TestAuthServiceIntegration:
         }
         user = await real_auth_service.register(registration_data)
         assert user["email"] == "newuser@example.com"
-        
+
         # Login
         login_result = await real_auth_service.login({
             "email": "newuser@example.com",
@@ -544,19 +545,19 @@ class TestAuthServiceIntegration:
         })
         assert login_result["success"] is True
         token = login_result["token"]
-        
+
         # Validate token
         validation = await real_auth_service.validate_token(token)
         assert validation["valid"] is True
-        
+
         # Refresh token
         new_token = await real_auth_service.refresh_token(token)
         assert new_token != token
-        
+
         # Logout
         logout_result = await real_auth_service.logout(new_token)
         assert logout_result["success"] is True
-        
+
         # Verify token is revoked
         with pytest.raises(TokenError):
             await real_auth_service.validate_token(new_token)
@@ -564,7 +565,7 @@ class TestAuthServiceIntegration:
 
 ## Quality Checklist
 - ✅ Tests are independent and isolated
-- ✅ Clear test names following conventions  
+- ✅ Clear test names following conventions
 - ✅ Both happy paths and edge cases covered
 - ✅ Proper setup and teardown
 - ✅ No hardcoded test data
@@ -590,7 +591,7 @@ Target: 80% overall, 100% for critical paths. Generate reports with coverage too
 ---
 *QA Engineer Agent | 2025-06-01 19:58*
 """
-    
+
     def _mock_devops_infrastructure(self) -> str:
         """Generate mock DevOps infrastructure response."""
         return """# 🏗️ Infrastructure Implementation
@@ -604,14 +605,14 @@ Create Terraform configuration for a highly available Kubernetes cluster on AWS 
 # terraform/main.tf
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
-  
+
   backend "s3" {
     bucket  = "aiosv3-terraform-state"
     key     = "infrastructure/terraform.tfstate"
@@ -624,18 +625,18 @@ terraform {
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
   version = "5.0.0"
-  
+
   name = "aiosv3-${var.environment}"
   cidr = "10.0.0.0/16"
-  
+
   azs             = data.aws_availability_zones.available.names
   private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
   public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
-  
+
   enable_nat_gateway = true
   enable_vpn_gateway = false
   enable_dns_hostnames = true
-  
+
   tags = local.common_tags
 }
 
@@ -643,47 +644,47 @@ module "vpc" {
 module "eks" {
   source  = "terraform-aws-modules/eks/aws"
   version = "19.0.0"
-  
+
   cluster_name    = "aiosv3-${var.environment}"
   cluster_version = "1.27"
-  
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
-  
+
   eks_managed_node_groups = {
     application = {
       desired_size = 3
       min_size     = 3
       max_size     = 10
-      
+
       instance_types = ["t3.large"]
-      
+
       labels = {
         Environment = var.environment
         Role        = "application"
       }
-      
+
       taints = []
-      
+
       update_config = {
         max_unavailable_percentage = 50
       }
     }
   }
-  
+
   manage_aws_auth_configmap = true
-  
+
   tags = local.common_tags
 }
 
 # RDS Aurora PostgreSQL
 module "aurora" {
   source  = "terraform-aws-modules/rds-aurora/aws"
-  
+
   name           = "aiosv3-${var.environment}"
   engine         = "aurora-postgresql"
   engine_version = "15.3"
-  
+
   instances = {
     1 = {
       instance_class      = "db.r6g.large"
@@ -694,20 +695,20 @@ module "aurora" {
       publicly_accessible = false
     }
   }
-  
+
   vpc_id               = module.vpc.vpc_id
   db_subnet_group_name = module.vpc.database_subnet_group_name
-  
+
   create_security_group = true
   allowed_cidr_blocks   = module.vpc.private_subnets_cidr_blocks
-  
+
   storage_encrypted = true
-  
+
   backup_retention_period = 30
   preferred_backup_window = "03:00-04:00"
-  
+
   enabled_cloudwatch_logs_exports = ["postgresql"]
-  
+
   tags = local.common_tags
 }
 
@@ -715,24 +716,24 @@ module "aurora" {
 resource "aws_elasticache_replication_group" "redis" {
   replication_group_id       = "aiosv3-${var.environment}"
   replication_group_description = "Redis cluster for AIOSv3"
-  
+
   engine               = "redis"
   engine_version       = "7.0"
   node_type           = "cache.r6g.large"
   number_cache_clusters = 2
-  
+
   subnet_group_name = aws_elasticache_subnet_group.redis.name
   security_group_ids = [aws_security_group.redis.id]
-  
+
   at_rest_encryption_enabled = true
   transit_encryption_enabled = true
-  
+
   automatic_failover_enabled = true
   multi_az_enabled          = true
-  
+
   snapshot_retention_limit = 5
   snapshot_window         = "03:00-05:00"
-  
+
   tags = local.common_tags
 }
 
@@ -740,22 +741,22 @@ resource "aws_elasticache_replication_group" "redis" {
 module "alb" {
   source  = "terraform-aws-modules/alb/aws"
   version = "8.0.0"
-  
+
   name = "aiosv3-${var.environment}"
-  
+
   load_balancer_type = "application"
-  
+
   vpc_id          = module.vpc.vpc_id
   subnets         = module.vpc.public_subnets
   security_groups = [aws_security_group.alb.id]
-  
+
   target_groups = [
     {
       name_prefix      = "app-"
       backend_protocol = "HTTP"
       backend_port     = 80
       target_type      = "ip"
-      
+
       health_check = {
         enabled             = true
         interval            = 30
@@ -768,7 +769,7 @@ module "alb" {
       }
     }
   ]
-  
+
   https_listeners = [
     {
       port               = 443
@@ -777,7 +778,7 @@ module "alb" {
       target_group_index = 0
     }
   ]
-  
+
   http_tcp_listeners = [
     {
       port        = 80
@@ -790,7 +791,7 @@ module "alb" {
       }
     }
   ]
-  
+
   tags = local.common_tags
 }
 
@@ -798,7 +799,7 @@ module "alb" {
 resource "aws_cloudwatch_log_group" "application" {
   name              = "/aws/eks/aiosv3-${var.environment}/application"
   retention_in_days = 30
-  
+
   tags = local.common_tags
 }
 
@@ -990,18 +991,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ env.AWS_REGION }}
-    
+
     - name: Login to Amazon ECR
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v1
-    
+
     - name: Build, tag, and push image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -1011,16 +1012,16 @@ jobs:
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-    
+
     - name: Update kubeconfig
       run: |
         aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-    
+
     - name: Deploy to Kubernetes
       run: |
         kubectl set image deployment/aiosv3-backend backend=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} -n aiosv3
         kubectl rollout status deployment/aiosv3-backend -n aiosv3 --timeout=300s
-    
+
     - name: Run smoke tests
       run: |
         ./scripts/smoke-tests.sh ${{ secrets.APP_URL }}
@@ -1063,10 +1064,10 @@ Estimated monthly costs:
 ---
 *DevOps Engineer Agent | 2025-06-01 20:45*
 """
-    
+
     def _mock_frontend_development(self) -> str:
         """Generate mock React/Vue frontend development response."""
-        return """# 🎨 Frontend Code Implementation
+        return r"""# 🎨 Frontend Code Implementation
 
 ## Task Summary
 Create a React component for user authentication that includes a login form with email/password fields, validation, error handling, and integration with a backend API.
@@ -1122,21 +1123,21 @@ export const LoginForm: React.FC = () => {
   // Validation
   const validateForm = (): boolean => {
     const newErrors: Partial<LoginFormData> = {};
-    
+
     // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Invalid email format';
     }
-    
+
     // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -1144,7 +1145,7 @@ export const LoginForm: React.FC = () => {
   // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       loginMutation.mutate(formData);
     }
@@ -1157,7 +1158,7 @@ export const LoginForm: React.FC = () => {
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error for this field
     if (errors[name as keyof LoginFormData]) {
       setErrors(prev => ({

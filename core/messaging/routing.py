@@ -8,7 +8,7 @@ efficient agent-to-agent communication.
 import logging
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -46,7 +46,7 @@ class ExchangeConfig:
     type: str  # direct, topic, fanout, headers
     durable: bool = True
     auto_delete: bool = False
-    arguments: Optional[Dict[str, Any]] = None
+    arguments: dict[str, Any] | None = None
 
 
 @dataclass
@@ -57,10 +57,10 @@ class QueueConfig:
     durable: bool = True
     exclusive: bool = False
     auto_delete: bool = False
-    max_length: Optional[int] = None
-    message_ttl: Optional[int] = None
-    dead_letter_exchange: Optional[str] = None
-    dead_letter_routing_key: Optional[str] = None
+    max_length: int | None = None
+    message_ttl: int | None = None
+    dead_letter_exchange: str | None = None
+    dead_letter_routing_key: str | None = None
 
 
 @dataclass
@@ -86,11 +86,11 @@ class MessageRoutingConfig:
     - Message patterns
     """
 
-    def __init__(self, config_path: Optional[str] = None):
+    def __init__(self, config_path: str | None = None):
         """Initialize routing configuration."""
-        self.exchanges: Dict[str, ExchangeConfig] = {}
-        self.routing_rules: Dict[str, RoutingRule] = {}
-        self.queue_configs: Dict[str, QueueConfig] = {}
+        self.exchanges: dict[str, ExchangeConfig] = {}
+        self.routing_rules: dict[str, RoutingRule] = {}
+        self.queue_configs: dict[str, QueueConfig] = {}
 
         if config_path:
             self.load_from_file(config_path)
@@ -261,10 +261,10 @@ class MessageRoutingConfig:
                 f"Missing parameter {e} for queue pattern {config.name_pattern}"
             )
 
-    def find_routing_rule(self, routing_key: str) -> Optional[RoutingRule]:
+    def find_routing_rule(self, routing_key: str) -> RoutingRule | None:
         """Find the best matching routing rule for a routing key."""
         # For now, simple exact match - could be enhanced with pattern matching
-        for rule_name, rule in self.routing_rules.items():
+        for _rule_name, rule in self.routing_rules.items():
             if self._matches_pattern(routing_key, rule.pattern):
                 return rule
         return None
@@ -289,7 +289,7 @@ class MessageRoutingConfig:
 
     def get_agent_routing_keys(
         self, agent_id: str, agent_type: str = None
-    ) -> List[str]:
+    ) -> list[str]:
         """Get all routing keys that an agent should listen to."""
         routing_keys = []
 
@@ -311,11 +311,11 @@ class MessageRoutingConfig:
 
         return routing_keys
 
-    def get_exchange_config(self, exchange_name: str) -> Optional[ExchangeConfig]:
+    def get_exchange_config(self, exchange_name: str) -> ExchangeConfig | None:
         """Get configuration for an exchange."""
         return self.exchanges.get(exchange_name)
 
-    def get_routing_rule(self, rule_name: str) -> Optional[RoutingRule]:
+    def get_routing_rule(self, rule_name: str) -> RoutingRule | None:
         """Get a specific routing rule."""
         return self.routing_rules.get(rule_name)
 
@@ -404,7 +404,7 @@ class MessageRoutingConfig:
                 return name
         return "unknown"
 
-    def validate_configuration(self) -> List[str]:
+    def validate_configuration(self) -> list[str]:
         """Validate the current configuration and return any issues."""
         issues = []
 

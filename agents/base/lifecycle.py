@@ -10,7 +10,7 @@ import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -36,8 +36,8 @@ class StateTransition(BaseModel):
     from_state: AgentState
     to_state: AgentState
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    reason: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    reason: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
 class LifecycleEvent(BaseModel):
@@ -47,15 +47,15 @@ class LifecycleEvent(BaseModel):
     state: AgentState
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     agent_id: str
-    details: Dict[str, Any] = Field(default_factory=dict)
-    error: Optional[str] = None
+    details: dict[str, Any] = Field(default_factory=dict)
+    error: str | None = None
 
 
 class LifecycleHooks:
     """Manages lifecycle hooks for customization."""
 
     def __init__(self):
-        self._hooks: Dict[str, List[Callable]] = {
+        self._hooks: dict[str, list[Callable]] = {
             "pre_init": [],
             "post_init": [],
             "pre_start": [],
@@ -135,18 +135,18 @@ class AgentLifecycleManager:
         """Initialize lifecycle manager."""
         self.agent_id = agent_id
         self._current_state = initial_state
-        self._state_history: List[StateTransition] = []
+        self._state_history: list[StateTransition] = []
         self._hooks = LifecycleHooks()
         self._state_lock = asyncio.Lock()
-        self._event_handlers: Dict[str, List[Callable]] = {}
+        self._event_handlers: dict[str, list[Callable]] = {}
 
         # State persistence
-        self._last_checkpoint: Optional[datetime] = None
+        self._last_checkpoint: datetime | None = None
         self._checkpoint_interval = timedelta(minutes=5)
 
         # Health monitoring
-        self._health_checks: Dict[str, Callable] = {}
-        self._last_health_check: Optional[datetime] = None
+        self._health_checks: dict[str, Callable] = {}
+        self._last_health_check: datetime | None = None
         self._health_check_interval = timedelta(seconds=30)
 
         # Recovery tracking
@@ -160,7 +160,7 @@ class AgentLifecycleManager:
         return self._current_state
 
     @property
-    def state_history(self) -> List[StateTransition]:
+    def state_history(self) -> list[StateTransition]:
         """Get state transition history."""
         return self._state_history.copy()
 
@@ -179,7 +179,7 @@ class AgentLifecycleManager:
     async def transition_to(
         self,
         target_state: AgentState,
-        reason: Optional[str] = None,
+        reason: str | None = None,
         force: bool = False,
     ) -> bool:
         """
@@ -292,7 +292,7 @@ class AgentLifecycleManager:
             await self.transition_to(AgentState.ERROR, reason=str(e), force=True)
             return False
 
-    async def pause(self, reason: Optional[str] = None) -> bool:
+    async def pause(self, reason: str | None = None) -> bool:
         """Pause the agent."""
         if self._current_state not in {AgentState.IDLE, AgentState.BUSY}:
             logger.warning(f"Cannot pause from state: {self._current_state}")
@@ -457,7 +457,7 @@ class AgentLifecycleManager:
         """Register a health check function."""
         self._health_checks[name] = check_func
 
-    async def check_health(self) -> Dict[str, Any]:
+    async def check_health(self) -> dict[str, Any]:
         """Perform health checks."""
         health_status = {
             "agent_id": self.agent_id,
@@ -628,7 +628,7 @@ class AgentLifecycleManager:
         # For now, just wait a bit
         await asyncio.sleep(1.0)
 
-    def get_state_duration(self, state: Optional[AgentState] = None) -> timedelta:
+    def get_state_duration(self, state: AgentState | None = None) -> timedelta:
         """Get duration in current or specified state."""
         target_state = state or self._current_state
 

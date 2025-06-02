@@ -12,10 +12,8 @@ This agent focuses on:
 - Disaster recovery planning
 """
 
-import json
-import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -56,7 +54,7 @@ class DevOpsAgentConfig(EnhancedAgentConfig):
 class DevOpsEngineerAgent(EnhancedBaseAgent):
     """
     DevOps Engineer Agent for infrastructure and operational excellence.
-    
+
     Specializes in:
     - Infrastructure as Code (Terraform, Ansible, CloudFormation)
     - Container technologies (Docker, Kubernetes, ECS)
@@ -68,7 +66,7 @@ class DevOpsEngineerAgent(EnhancedBaseAgent):
     - Disaster recovery and backup strategies
     """
 
-    def __init__(self, config: Optional[DevOpsAgentConfig] = None):
+    def __init__(self, config: DevOpsAgentConfig | None = None):
         """Initialize DevOps Engineer Agent with specialized configuration."""
         if config is None:
             config = DevOpsAgentConfig()
@@ -546,14 +544,14 @@ Ensure all solutions follow DevOps best practices and are production-ready."""
 
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
   }
-  
+
   backend "s3" {
     bucket = "aiosv3-terraform-state"
     key    = "infrastructure/terraform.tfstate"
@@ -565,93 +563,93 @@ terraform {
 # VPC Configuration
 module "vpc" {
   source = "./modules/vpc"
-  
+
   name = "aiosv3-${var.environment}"
   cidr = var.vpc_cidr
-  
+
   azs             = data.aws_availability_zones.available.names
   private_subnets = var.private_subnet_cidrs
   public_subnets  = var.public_subnet_cidrs
-  
+
   enable_nat_gateway = true
   enable_vpn_gateway = false
-  
+
   tags = local.common_tags
 }
 
 # EKS Cluster
 module "eks" {
   source = "./modules/eks"
-  
+
   cluster_name    = "aiosv3-${var.environment}"
   cluster_version = "1.27"
-  
+
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
-  
+
   node_groups = {
     main = {
       desired_capacity = 3
       max_capacity     = 10
       min_capacity     = 3
-      
+
       instance_types = ["t3.large"]
-      
+
       k8s_labels = {
         Environment = var.environment
         Type        = "application"
       }
     }
   }
-  
+
   tags = local.common_tags
 }
 
 # RDS Database
 module "rds" {
   source = "./modules/rds"
-  
+
   identifier = "aiosv3-${var.environment}"
-  
+
   engine         = "postgres"
   engine_version = "15.3"
   instance_class = var.db_instance_class
-  
+
   allocated_storage     = 100
   max_allocated_storage = 1000
-  
+
   db_name  = "aiosv3"
   username = "aiosv3_admin"
-  
+
   vpc_security_group_ids = [module.security.db_security_group_id]
   subnet_ids            = module.vpc.database_subnets
-  
+
   backup_retention_period = 30
   backup_window          = "03:00-04:00"
   maintenance_window     = "sun:04:00-sun:05:00"
-  
+
   tags = local.common_tags
 }
 
 # Security Groups
 module "security" {
   source = "./modules/security"
-  
+
   vpc_id      = module.vpc.vpc_id
   environment = var.environment
-  
+
   allowed_cidr_blocks = var.allowed_cidr_blocks
 }
 
 # Monitoring
 module "monitoring" {
   source = "./modules/monitoring"
-  
+
   cluster_name = module.eks.cluster_id
   environment  = var.environment
-  
+
   alert_email = var.alert_email
-  
+
   tags = local.common_tags
 }
 
@@ -860,7 +858,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:15
@@ -874,40 +872,40 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
         cache: 'pip'
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install -r requirements-dev.txt
-    
+
     - name: Lint with ruff
       run: |
         ruff check .
-    
+
     - name: Type check with mypy
       run: |
         mypy .
-    
+
     - name: Security scan with bandit
       run: |
         bandit -r . -ll
-    
+
     - name: Test with pytest
       env:
         DATABASE_URL: postgresql://postgres:testpass@localhost:5432/test_db
       run: |
         pytest --cov=. --cov-report=xml --cov-report=html
-    
+
     - name: Upload coverage
       uses: codecov/codecov-action@v3
 
@@ -916,21 +914,21 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-    
+
     permissions:
       contents: read
       packages: write
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Log in to Container Registry
       uses: docker/login-action@v2
       with:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-    
+
     - name: Extract metadata
       id: meta
       uses: docker/metadata-action@v4
@@ -941,7 +939,7 @@ jobs:
           type=ref,event=pr
           type=semver,pattern={{version}}
           type=sha
-    
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
@@ -951,14 +949,14 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-    
+
     - name: Scan image for vulnerabilities
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
         format: 'sarif'
         output: 'trivy-results.sarif'
-    
+
     - name: Upload Trivy scan results
       uses: github/codeql-action/upload-sarif@v2
       with:
@@ -969,26 +967,26 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
     - uses: actions/checkout@v3
-    
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-west-2
-    
+
     - name: Update kubeconfig
       run: |
         aws eks update-kubeconfig --name aiosv3-production --region us-west-2
-    
+
     - name: Deploy to Kubernetes
       run: |
         kubectl set image deployment/aiosv3-backend backend=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} -n aiosv3
         kubectl rollout status deployment/aiosv3-backend -n aiosv3
-    
+
     - name: Run smoke tests
       run: |
         ./scripts/smoke-tests.sh
@@ -1129,7 +1127,7 @@ groups:
 
 
 # Factory function for easy DevOps Agent creation
-async def create_devops_agent(custom_config: Optional[Dict[str, Any]] = None) -> DevOpsEngineerAgent:
+async def create_devops_agent(custom_config: dict[str, Any] | None = None) -> DevOpsEngineerAgent:
     """Create and initialize a DevOps Engineer Agent with optional custom configuration."""
 
     config_params = custom_config or {}
@@ -1143,13 +1141,13 @@ async def create_devops_agent(custom_config: Optional[Dict[str, Any]] = None) ->
 
 # Example usage and testing
 if __name__ == "__main__":
-    
+
     async def test_devops_agent():
         """Test DevOps Engineer Agent functionality."""
-        
+
         # Create DevOps Agent
         devops = await create_devops_agent()
-        
+
         # Infrastructure task
         infra_task = EnhancedTask(
             task_type=TaskType.INFRASTRUCTURE,
@@ -1161,7 +1159,7 @@ if __name__ == "__main__":
                 "requirements": ["high_availability", "auto_scaling", "monitoring"]
             }
         )
-        
+
         print("⚙️ Testing DevOps Agent - Infrastructure as Code")
         result = await devops.process_task(infra_task)
         print(f"Success: {result.success}")
@@ -1170,14 +1168,14 @@ if __name__ == "__main__":
         print(f"Model used: {result.model_used}")
         print("\n" + "="*80)
         print(result.output[:1000] + "..." if len(result.output) > 1000 else result.output)
-        
+
         # Get agent status
         status = devops.get_status()
         print("\n📊 DevOps Agent Status:")
         print(f"Tasks completed: {status['tasks_completed']}")
         print(f"Success rate: {status['success_rate']:.1%}")
         print(f"Total cost: ${status['total_cost']:.4f}")
-        
+
         await devops.stop()
 
     # Run test

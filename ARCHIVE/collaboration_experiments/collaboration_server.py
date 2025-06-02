@@ -13,7 +13,7 @@ import time
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import websockets
 
@@ -28,7 +28,7 @@ class CollaboratorInfo:
     name: str
     terminal_id: str
     last_seen: float
-    current_task: Optional[str] = None
+    current_task: str | None = None
     status: str = "active"  # active, busy, idle
 
 @dataclass
@@ -40,7 +40,7 @@ class Message:
     timestamp: float
     message_type: str  # "chat", "task_update", "file_change", "question"
     content: str
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 @dataclass
 class TaskInfo:
@@ -51,21 +51,21 @@ class TaskInfo:
     status: str  # "planned", "in_progress", "completed", "blocked"
     created_at: float
     updated_at: float
-    files_involved: List[str]
-    dependencies: List[str]
+    files_involved: list[str]
+    dependencies: list[str]
 
 class CollaborationServer:
     """WebSocket server for real-time collaboration between Claude Code instances."""
 
     def __init__(self, port: int = 8765):
         self.port = port
-        self.collaborators: Dict[str, CollaboratorInfo] = {}
-        self.messages: List[Message] = []
-        self.tasks: Dict[str, TaskInfo] = {}
+        self.collaborators: dict[str, CollaboratorInfo] = {}
+        self.messages: list[Message] = []
+        self.tasks: dict[str, TaskInfo] = {}
         self.connected_clients: Set[websockets.WebSocketServerProtocol] = set()
         self.repo_path = Path.cwd()
 
-    async def register_collaborator(self, websocket, data: Dict[str, Any]):
+    async def register_collaborator(self, websocket, data: dict[str, Any]):
         """Register a new collaborator."""
         collaborator_id = data.get("id", str(uuid.uuid4()))
         role = data.get("role", "unknown")
@@ -102,7 +102,7 @@ class CollaborationServer:
         logger.info(f"Registered collaborator: {name} ({role})")
         return collaborator_id
 
-    async def handle_message(self, websocket, data: Dict[str, Any]):
+    async def handle_message(self, websocket, data: dict[str, Any]):
         """Handle incoming message from collaborator."""
         message_type = data.get("type")
 
@@ -124,7 +124,7 @@ class CollaborationServer:
         elif message_type == "status_update":
             await self.handle_status_update(websocket, data)
 
-    async def handle_chat_message(self, websocket, data: Dict[str, Any]):
+    async def handle_chat_message(self, websocket, data: dict[str, Any]):
         """Handle chat message between collaborators."""
         from_id = data.get("from_id")
         content = data.get("content", "")
@@ -153,7 +153,7 @@ class CollaborationServer:
             "from_name": collaborator.name
         })
 
-    async def handle_task_update(self, websocket, data: Dict[str, Any]):
+    async def handle_task_update(self, websocket, data: dict[str, Any]):
         """Handle task status updates."""
         task_data = data.get("task", {})
         task_id = task_data.get("id")
@@ -181,7 +181,7 @@ class CollaborationServer:
             "task": asdict(task)
         })
 
-    async def handle_file_change(self, websocket, data: Dict[str, Any]):
+    async def handle_file_change(self, websocket, data: dict[str, Any]):
         """Handle file change notifications."""
         from_id = data.get("from_id")
         file_path = data.get("file_path")
@@ -202,14 +202,14 @@ class CollaborationServer:
             "timestamp": time.time()
         }, exclude=websocket)
 
-    async def handle_heartbeat(self, websocket, data: Dict[str, Any]):
+    async def handle_heartbeat(self, websocket, data: dict[str, Any]):
         """Handle heartbeat to keep collaborator alive."""
         from_id = data.get("from_id")
 
         if from_id in self.collaborators:
             self.collaborators[from_id].last_seen = time.time()
 
-    async def handle_status_update(self, websocket, data: Dict[str, Any]):
+    async def handle_status_update(self, websocket, data: dict[str, Any]):
         """Handle collaborator status updates."""
         from_id = data.get("from_id")
         status = data.get("status")
@@ -230,7 +230,7 @@ class CollaborationServer:
                 "name": collaborator.name
             })
 
-    async def broadcast(self, message: Dict[str, Any], exclude: websockets.Optional[WebSocketServerProtocol] = None):
+    async def broadcast(self, message: dict[str, Any], exclude: websockets.Optional[WebSocketServerProtocol] = None):
         """Broadcast message to all connected clients."""
         if not self.connected_clients:
             return

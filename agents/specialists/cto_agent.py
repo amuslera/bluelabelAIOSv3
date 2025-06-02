@@ -3,7 +3,7 @@ CTO Agent - Chief Technology Officer specializing in architectural decisions and
 
 This agent leverages the Enhanced BaseAgent framework to provide:
 - System architecture design and evaluation
-- Technology stack recommendations 
+- Technology stack recommendations
 - Code review and quality assessment
 - Strategic technical planning and roadmap guidance
 - Technical decision-making and documentation
@@ -11,7 +11,7 @@ This agent leverages the Enhanced BaseAgent framework to provide:
 
 import re
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any
 
 from agents.base.enhanced_agent import (
     AgentCapability,
@@ -51,7 +51,7 @@ class CTOAgentConfig(EnhancedAgentConfig):
 class CTOAgent(EnhancedBaseAgent):
     """
     Chief Technology Officer Agent for technical leadership and architectural decisions.
-    
+
     Specializes in:
     - System architecture design and evaluation
     - Technology stack selection and recommendations
@@ -61,7 +61,7 @@ class CTOAgent(EnhancedBaseAgent):
     - Risk assessment and mitigation strategies
     """
 
-    def __init__(self, config: Optional[CTOAgentConfig] = None):
+    def __init__(self, config: CTOAgentConfig | None = None):
         """Initialize CTO Agent with specialized configuration."""
         if config is None:
             config = CTOAgentConfig()
@@ -160,7 +160,7 @@ class CTOAgent(EnhancedBaseAgent):
 
 ## Implementation Considerations
 - **Scalability**: How this scales with growth
-- **Performance**: Expected performance characteristics  
+- **Performance**: Expected performance characteristics
 - **Operational**: Deployment and maintenance considerations
 - **Cost**: Resource and operational cost implications
 
@@ -410,7 +410,7 @@ Please provide your analysis and recommendations as the CTO."""
 
 
 # Factory function for easy CTO Agent creation
-async def create_cto_agent(custom_config: Optional[Dict[str, Any]] = None) -> CTOAgent:
+async def create_cto_agent(custom_config: dict[str, Any] | None = None) -> CTOAgent:
     """Create and initialize a CTO Agent with optional custom configuration."""
 
     config_params = custom_config or {}
