@@ -19,7 +19,7 @@ for logger_name in ['agents.base', 'core.routing', 'httpx']:
 
 from textual import on
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, Vertical
+from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
 from textual.reactive import reactive
 from textual.widgets import (
     Button,
@@ -56,26 +56,26 @@ class AgentStatusWidget(Static):
         self.total_cost = 0.0
         self.total_tokens = 0
         self.task_start_time = None
-        # Activity history (keep last 4)
-        self.recent_activities = ["", "", "", ""]
-        # Will store direct references to activity labels
+        # Activity history - now unlimited, stored as list
+        self.activity_history = []
+        # Will store reference to scrollable activity container and labels
+        self.activity_scroll = None
         self.activity_labels = []
 
     def compose(self) -> ComposeResult:
-        """Create agent status display with simple layout."""
+        """Create agent status display with scrollable activity log."""
         # Main content area with horizontal split
         with Horizontal(classes="agent-content"):
-            # Left side: Recent activities with compact header (70% width)
+            # Left side: Scrollable activity log with compact header (70% width)
             with Vertical(classes="agent-activity"):
                 # Compact agent header
                 yield Label(f"{self.agent_name}", classes="agent-header")
-                # Create 4 labels for recent activities - store references  
-                self.activity_labels = []
-                for i in range(4):
-                    # Start with empty labels - will be filled with real activities
-                    label = Label("", id=f"activity-{self.agent_id}-{i}", classes="activity-line")
-                    self.activity_labels.append(label)
-                    yield label
+                # Create vertically scrollable container
+                self.activity_scroll = ScrollableContainer(
+                    id=f"activity-scroll-{self.agent_id}",
+                    classes="activity-scroll"
+                )
+                yield self.activity_scroll
             
             # Right side: Metrics and progress (30% width)
             with Vertical(classes="agent-metrics"):
@@ -133,47 +133,52 @@ class AgentStatusWidget(Static):
         except:
             pass
 
-        # Add new activity to rolling buffer - ALWAYS add, even if task is None
+        # Add new activity to unlimited history
         timestamp = datetime.now().strftime("%H:%M:%S")
         
         if task:
+            # Keep task descriptions reasonable length to prevent horizontal scrolling
             display_task = task if len(task) <= 60 else task[:57] + "..."
             activity_text = f"{timestamp} {status}: {display_task}"
         else:
-            activity_text = f"{timestamp} Status changed to: {status}"
+            activity_text = f"{timestamp} Status: {status}"
         
-        # Update rolling buffer (shift old activities and add new one)
-        self.recent_activities = [activity_text] + self.recent_activities[:3]
+        # Add to unlimited activity history
+        self.activity_history.append(activity_text)
         
-        # DIRECT UPDATE: Use the same approach that worked for debug
-        if hasattr(self, 'activity_labels') and self.activity_labels:
+        # Update scrollable container with new label
+        if self.activity_scroll:
             try:
-                # Update all 4 lines with our activity buffer
-                for i in range(min(4, len(self.activity_labels))):
-                    if i < len(self.recent_activities) and self.recent_activities[i]:
-                        self.activity_labels[i].update(self.recent_activities[i])
-                        self.activity_labels[i].refresh()
-                    else:
-                        self.activity_labels[i].update("")  # Clear unused lines
-                        self.activity_labels[i].refresh()
+                # Create a new label for this activity
+                activity_label = Label(activity_text, classes="activity-item")
+                self.activity_labels.append(activity_label)
+                
+                # Mount the new label to the scrollable container
+                self.activity_scroll.mount(activity_label)
+                
+                # Keep only last 100 activities to prevent memory issues
+                if len(self.activity_labels) > 100:
+                    old_label = self.activity_labels.pop(0)
+                    old_label.remove()
+                    self.activity_history.pop(0)
+                
+                # Auto-scroll to bottom to show latest activity
+                self.activity_scroll.scroll_end()
+                    
             except Exception as e:
-                # If there's still an error, just show the latest activity simply
-                if self.recent_activities:
-                    self.activity_labels[0].update(self.recent_activities[0])
-                    self.activity_labels[0].refresh()
+                pass  # If mounting fails, just ignore
 
-    def _update_activity_lines(self):
-        """Update the activity lines with current buffer content."""
-        # Use the same direct approach that works for the test
-        if hasattr(self, 'activity_labels') and self.activity_labels:
-            for i in range(min(4, len(self.activity_labels))):
-                try:
-                    if i < len(self.recent_activities) and self.recent_activities[i]:
-                        # Use the same direct update method that worked for the test
-                        self.activity_labels[i].update(self.recent_activities[i])
-                        self.activity_labels[i].refresh()
-                except Exception as e:
-                    pass
+    def add_activity(self, activity_text: str):
+        """Add an activity directly to the log (for manual additions)."""
+        self.activity_history.append(activity_text)
+        if self.activity_scroll:
+            try:
+                activity_label = Label(activity_text, classes="activity-item")
+                self.activity_labels.append(activity_label)
+                self.activity_scroll.mount(activity_label)
+                self.activity_scroll.scroll_end()
+            except:
+                pass
 
     def get_status_icon(self) -> str:
         """Get status icon."""
@@ -201,24 +206,17 @@ class AgentStatusWidget(Static):
     
     def clear_log(self):
         """Clear the agent's activity log and reset metrics."""
-        # Clear activity buffer
-        self.recent_activities = ["", "", "", ""]
+        # Clear activity history
+        self.activity_history = []
         
-        # Clear activity display lines using direct references if available
-        if hasattr(self, 'activity_labels') and self.activity_labels:
-            for label in self.activity_labels:
-                try:
-                    label.update("")  # Clear to empty
-                except:
-                    pass
-        else:
-            # Fallback to query selectors
-            for i in range(4):
-                try:
-                    activity_label = self.query_one(f"#activity-{self.agent_id}-{i}", Label)
-                    activity_label.update("")  # Clear to empty, not placeholder
-                except:
-                    pass
+        # Clear all activity labels
+        if self.activity_scroll:
+            try:
+                for label in self.activity_labels:
+                    label.remove()
+                self.activity_labels = []
+            except:
+                pass
             
         # Reset metrics
         self.tasks_assigned = 0
@@ -342,11 +340,19 @@ class TheatricalMonitoringApp(App):
         padding-left: 1;
     }
     
-    .activity-line {
+    .activity-scroll {
         height: 1fr;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        border: solid $surface;
+        margin: 0 1;
+        scrollbar-background: $panel;
+        scrollbar-color: $primary;
+    }
+    
+    .activity-item {
+        height: auto;
+        width: 100%;
         padding: 0 1;
+        margin: 0;
     }
 
     .section-title {
@@ -473,14 +479,8 @@ class TheatricalMonitoringApp(App):
 
         # Reset displays and start with real activities
         for widget in self.agent_widgets.values():
-            # First, put a simple test in the first line to verify it works
-            if hasattr(widget, 'activity_labels') and widget.activity_labels:
-                try:
-                    widget.activity_labels[0].update("Activity system ready...")
-                    widget.activity_labels[0].refresh()
-                except:
-                    pass
-            
+            # Add a welcome message to the scrollable log
+            widget.add_activity("🎭 Scrollable activity log ready - you can now scroll through full history!")
             widget.update_status("idle", 0, "Demo starting - waiting for initialization...")
 
         if self.event_log:
