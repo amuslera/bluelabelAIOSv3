@@ -15,6 +15,10 @@ class EnhancedMockProvider(MockProvider):
         if any(word in user_lower for word in ["test", "pytest", "unit test", "qa", "quality", "coverage", "testing"]):
             return self._mock_qa_testing_code()
         
+        # DevOps/Infrastructure responses
+        elif any(word in user_lower for word in ["terraform", "kubernetes", "docker", "infrastructure", "deployment", "cicd", "monitoring", "devops"]):
+            return self._mock_devops_infrastructure()
+        
         # Frontend/React/Vue development responses
         elif any(word in user_lower for word in ["react", "vue", "frontend", "component", "ui", "login form", "user interface"]):
             return self._mock_frontend_development()
@@ -585,6 +589,479 @@ Target: 80% overall, 100% for critical paths. Generate reports with coverage too
 
 ---
 *QA Engineer Agent | 2025-06-01 19:58*
+"""
+    
+    def _mock_devops_infrastructure(self) -> str:
+        """Generate mock DevOps infrastructure response."""
+        return """# 🏗️ Infrastructure Implementation
+
+## Infrastructure Requirements
+Create Terraform configuration for a highly available Kubernetes cluster on AWS with auto-scaling, monitoring, and security best practices.
+
+## Infrastructure as Code
+
+```hcl
+# terraform/main.tf
+terraform {
+  required_version = ">= 1.0"
+  
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+  
+  backend "s3" {
+    bucket  = "aiosv3-terraform-state"
+    key     = "infrastructure/terraform.tfstate"
+    region  = "us-west-2"
+    encrypt = true
+  }
+}
+
+# VPC Module
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "5.0.0"
+  
+  name = "aiosv3-${var.environment}"
+  cidr = "10.0.0.0/16"
+  
+  azs             = data.aws_availability_zones.available.names
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  
+  enable_nat_gateway = true
+  enable_vpn_gateway = false
+  enable_dns_hostnames = true
+  
+  tags = local.common_tags
+}
+
+# EKS Cluster
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "19.0.0"
+  
+  cluster_name    = "aiosv3-${var.environment}"
+  cluster_version = "1.27"
+  
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+  
+  eks_managed_node_groups = {
+    application = {
+      desired_size = 3
+      min_size     = 3
+      max_size     = 10
+      
+      instance_types = ["t3.large"]
+      
+      labels = {
+        Environment = var.environment
+        Role        = "application"
+      }
+      
+      taints = []
+      
+      update_config = {
+        max_unavailable_percentage = 50
+      }
+    }
+  }
+  
+  manage_aws_auth_configmap = true
+  
+  tags = local.common_tags
+}
+
+# RDS Aurora PostgreSQL
+module "aurora" {
+  source  = "terraform-aws-modules/rds-aurora/aws"
+  
+  name           = "aiosv3-${var.environment}"
+  engine         = "aurora-postgresql"
+  engine_version = "15.3"
+  
+  instances = {
+    1 = {
+      instance_class      = "db.r6g.large"
+      publicly_accessible = false
+    }
+    2 = {
+      instance_class      = "db.r6g.large"
+      publicly_accessible = false
+    }
+  }
+  
+  vpc_id               = module.vpc.vpc_id
+  db_subnet_group_name = module.vpc.database_subnet_group_name
+  
+  create_security_group = true
+  allowed_cidr_blocks   = module.vpc.private_subnets_cidr_blocks
+  
+  storage_encrypted = true
+  
+  backup_retention_period = 30
+  preferred_backup_window = "03:00-04:00"
+  
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+  
+  tags = local.common_tags
+}
+
+# ElastiCache Redis Cluster
+resource "aws_elasticache_replication_group" "redis" {
+  replication_group_id       = "aiosv3-${var.environment}"
+  replication_group_description = "Redis cluster for AIOSv3"
+  
+  engine               = "redis"
+  engine_version       = "7.0"
+  node_type           = "cache.r6g.large"
+  number_cache_clusters = 2
+  
+  subnet_group_name = aws_elasticache_subnet_group.redis.name
+  security_group_ids = [aws_security_group.redis.id]
+  
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  
+  automatic_failover_enabled = true
+  multi_az_enabled          = true
+  
+  snapshot_retention_limit = 5
+  snapshot_window         = "03:00-05:00"
+  
+  tags = local.common_tags
+}
+
+# Application Load Balancer
+module "alb" {
+  source  = "terraform-aws-modules/alb/aws"
+  version = "8.0.0"
+  
+  name = "aiosv3-${var.environment}"
+  
+  load_balancer_type = "application"
+  
+  vpc_id          = module.vpc.vpc_id
+  subnets         = module.vpc.public_subnets
+  security_groups = [aws_security_group.alb.id]
+  
+  target_groups = [
+    {
+      name_prefix      = "app-"
+      backend_protocol = "HTTP"
+      backend_port     = 80
+      target_type      = "ip"
+      
+      health_check = {
+        enabled             = true
+        interval            = 30
+        path                = "/health"
+        port                = "traffic-port"
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+        timeout             = 5
+        protocol            = "HTTP"
+      }
+    }
+  ]
+  
+  https_listeners = [
+    {
+      port               = 443
+      protocol           = "HTTPS"
+      certificate_arn    = aws_acm_certificate.main.arn
+      target_group_index = 0
+    }
+  ]
+  
+  http_tcp_listeners = [
+    {
+      port        = 80
+      protocol    = "HTTP"
+      action_type = "redirect"
+      redirect = {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
+    }
+  ]
+  
+  tags = local.common_tags
+}
+
+# CloudWatch Log Groups
+resource "aws_cloudwatch_log_group" "application" {
+  name              = "/aws/eks/aiosv3-${var.environment}/application"
+  retention_in_days = 30
+  
+  tags = local.common_tags
+}
+
+# Outputs
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "aurora_cluster_endpoint" {
+  value = module.aurora.cluster_endpoint
+  sensitive = true
+}
+
+output "redis_primary_endpoint" {
+  value = aws_elasticache_replication_group.redis.primary_endpoint_address
+  sensitive = true
+}
+
+output "alb_dns_name" {
+  value = module.alb.lb_dns_name
+}
+```
+
+```hcl
+# terraform/variables.tf
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+}
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-west-2"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "enable_deletion_protection" {
+  description = "Enable deletion protection for critical resources"
+  type        = bool
+  default     = true
+}
+
+locals {
+  common_tags = {
+    Environment = var.environment
+    Project     = "AIOSv3"
+    ManagedBy   = "Terraform"
+    CreatedBy   = "DevOps Team"
+  }
+}
+```
+
+## Kubernetes Deployment
+
+```yaml
+# k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aiosv3
+  labels:
+    name: aiosv3
+    environment: production
+
+---
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aiosv3-backend
+  namespace: aiosv3
+  labels:
+    app: aiosv3
+    component: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: aiosv3
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: aiosv3
+        component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: aiosv3-backend
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: backend
+        image: aiosv3/backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: aiosv3-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: aiosv3-secrets
+              key: redis-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        volumeMounts:
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: aiosv3-config
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - aiosv3
+              topologyKey: kubernetes.io/hostname
+```
+
+## CI/CD Pipeline
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-west-2
+  ECR_REPOSITORY: aiosv3-backend
+  EKS_CLUSTER_NAME: aiosv3-production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+    
+    - name: Build, tag, and push image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+    
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+    
+    - name: Deploy to Kubernetes
+      run: |
+        kubectl set image deployment/aiosv3-backend backend=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }} -n aiosv3
+        kubectl rollout status deployment/aiosv3-backend -n aiosv3 --timeout=300s
+    
+    - name: Run smoke tests
+      run: |
+        ./scripts/smoke-tests.sh ${{ secrets.APP_URL }}
+```
+
+## Deployment Checklist
+- ✅ Terraform plan reviewed and approved
+- ✅ Resource tagging applied consistently
+- ✅ Cost estimates analyzed (estimated $450/month)
+- ✅ Security groups configured with least privilege
+- ✅ Backup strategy defined (30-day retention)
+- ✅ Monitoring and alerting enabled
+- ✅ Documentation updated
+
+## Security Considerations
+- All data encrypted at rest and in transit
+- IAM roles follow least privilege principle
+- Network isolation with private subnets
+- Security group rules restrict access
+- Secrets managed via AWS Secrets Manager
+- Container image scanning enabled
+
+## Cost Analysis
+Estimated monthly costs:
+- EKS Cluster: $73 (control plane)
+- EC2 Instances: $220 (3x t3.large)
+- RDS Aurora: $145 (2x db.r6g.large)
+- ElastiCache: $100 (2x cache.r6g.large)
+- Load Balancer: $25
+- Data Transfer: ~$50
+- Total: ~$613/month
+
+## Next Steps
+1. Review and approve Terraform plan
+2. Apply infrastructure changes
+3. Configure monitoring dashboards
+4. Update runbooks and documentation
+5. Schedule disaster recovery drill
+
+---
+*DevOps Engineer Agent | 2025-06-01 20:45*
 """
     
     def _mock_frontend_development(self) -> str:
