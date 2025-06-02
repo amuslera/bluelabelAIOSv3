@@ -9,7 +9,7 @@ import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from textual import on
 from textual.app import App, ComposeResult
@@ -53,7 +53,7 @@ class AgentStatusWidget(Static):
             yield ProgressBar(total=100, show_eta=False, id=f"progress-{self.agent_id}")
             yield Label(f"Task: {self.current_task[:30]}...", id=f"task-{self.agent_id}")
     
-    def update_status(self, status: str, progress: int = None, task: str = None):
+    def update_status(self, status: str, progress: Optional[int] = None, task: Optional[str] = None):
         """Update agent status display."""
         self.status = status
         if progress is not None:
@@ -137,8 +137,8 @@ class ProjectMetricsWidget(Static):
             yield Label(f"🔤 Tokens: {self.total_tokens:,}", id="tokens-metric")
             yield Label(f"📋 Phases: {self.phases_complete}/5", id="phases-metric")
     
-    def update_metrics(self, cost: float = None, time_elapsed: float = None, 
-                      tokens: int = None, phases: int = None):
+    def update_metrics(self, cost: Optional[float] = None, time_elapsed: Optional[float] = None, 
+                      tokens: Optional[int] = None, phases: Optional[int] = None):
         """Update metric display."""
         if cost is not None:
             self.total_cost = cost

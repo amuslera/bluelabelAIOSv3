@@ -5,7 +5,7 @@ Provides structured error handling for agent operations, task execution,
 and system integration failures.
 """
 
-from typing import Any
+from typing import Any, Dict, List, Optional
 
 
 class AgentError(Exception):
@@ -14,15 +14,15 @@ class AgentError(Exception):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        error_code: str | None = None,
+        agent_id: Optional[str] = None,
+        error_code: Optional[str] = None,
     ):
         super().__init__(message)
         self.agent_id = agent_id
         self.error_code = error_code
         self.message = message
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> Dict[str, Any]:
         """Convert exception to dictionary for serialization."""
         return {
             "error_type": self.__class__.__name__,
@@ -44,8 +44,8 @@ class AgentRegistrationError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        registry_response: dict | None = None,
+        agent_id: Optional[str] = None,
+        registry_response: Optional[Dict] = None,
     ):
         super().__init__(message, agent_id, "REGISTRATION_FAILED")
         self.registry_response = registry_response
@@ -57,9 +57,9 @@ class AgentStateError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        current_state: str | None = None,
-        expected_state: str | None = None,
+        agent_id: Optional[str] = None,
+        current_state: Optional[str] = None,
+        expected_state: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "INVALID_STATE")
         self.current_state = current_state
@@ -72,9 +72,9 @@ class TaskExecutionError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        task_id: str | None = None,
-        task_type: str | None = None,
+        agent_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        task_type: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "TASK_EXECUTION_FAILED")
         self.task_id = task_id
@@ -87,9 +87,9 @@ class TaskValidationError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        task_id: str | None = None,
-        validation_errors: list[str] | None = None,
+        agent_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        validation_errors: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "TASK_VALIDATION_FAILED")
         self.task_id = task_id
@@ -102,9 +102,9 @@ class TaskTimeoutError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        task_id: str | None = None,
-        timeout_seconds: float | None = None,
+        agent_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        timeout_seconds: Optional[float] = None,
     ):
         super().__init__(message, agent_id, "TASK_TIMEOUT")
         self.task_id = task_id
@@ -117,9 +117,9 @@ class AgentCapabilityError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        required_capability: str | None = None,
-        available_capabilities: list[str] | None = None,
+        agent_id: Optional[str] = None,
+        required_capability: Optional[str] = None,
+        available_capabilities: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "INSUFFICIENT_CAPABILITY")
         self.required_capability = required_capability
@@ -132,9 +132,9 @@ class AgentCommunicationError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        target_agent_id: str | None = None,
-        communication_type: str | None = None,
+        agent_id: Optional[str] = None,
+        target_agent_id: Optional[str] = None,
+        communication_type: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "COMMUNICATION_FAILED")
         self.target_agent_id = target_agent_id
@@ -147,8 +147,8 @@ class AgentMemoryError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        memory_operation: str | None = None,
+        agent_id: Optional[str] = None,
+        memory_operation: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "MEMORY_ERROR")
         self.memory_operation = memory_operation
@@ -160,9 +160,9 @@ class AgentHealthError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        health_check_type: str | None = None,
-        health_score: float | None = None,
+        agent_id: Optional[str] = None,
+        health_check_type: Optional[str] = None,
+        health_score: Optional[float] = None,
     ):
         super().__init__(message, agent_id, "HEALTH_CHECK_FAILED")
         self.health_check_type = health_check_type
@@ -175,9 +175,9 @@ class LLMRoutingError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        requested_model: str | None = None,
-        available_models: list[str] | None = None,
+        agent_id: Optional[str] = None,
+        requested_model: Optional[str] = None,
+        available_models: Optional[List[str]] = None,
     ):
         super().__init__(message, agent_id, "LLM_ROUTING_FAILED")
         self.requested_model = requested_model
@@ -190,9 +190,9 @@ class ModelExecutionError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        model_id: str | None = None,
-        provider: str | None = None,
+        agent_id: Optional[str] = None,
+        model_id: Optional[str] = None,
+        provider: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "MODEL_EXECUTION_FAILED")
         self.model_id = model_id
@@ -205,9 +205,9 @@ class ResourceLimitError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        resource_type: str | None = None,
-        limit_value: float | None = None,
+        agent_id: Optional[str] = None,
+        resource_type: Optional[str] = None,
+        limit_value: Optional[float] = None,
     ):
         super().__init__(message, agent_id, "RESOURCE_LIMIT_EXCEEDED")
         self.resource_type = resource_type
@@ -220,8 +220,8 @@ class ConfigurationError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        config_key: str | None = None,
+        agent_id: Optional[str] = None,
+        config_key: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "INVALID_CONFIGURATION")
         self.config_key = config_key
@@ -233,9 +233,9 @@ class DependencyError(AgentError):
     def __init__(
         self,
         message: str,
-        agent_id: str | None = None,
-        dependency_name: str | None = None,
-        dependency_type: str | None = None,
+        agent_id: Optional[str] = None,
+        dependency_name: Optional[str] = None,
+        dependency_type: Optional[str] = None,
     ):
         super().__init__(message, agent_id, "DEPENDENCY_UNAVAILABLE")
         self.dependency_name = dependency_name
@@ -295,7 +295,7 @@ def is_retryable_error(error: Exception) -> bool:
 
 
 def create_error_context(
-    error: Exception, agent_id: str | None = None, task_id: str | None = None
+    error: Exception, agent_id: Optional[str] = None, task_id: Optional[str] = None
 ) -> dict[str, Any]:
     """Create error context for logging and monitoring."""
     context = {

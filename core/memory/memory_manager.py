@@ -7,7 +7,7 @@ retrieval, context management, and intelligent compression.
 
 import logging
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, List, Optional, Union
 
 from .base import (
     ConversationContext,
@@ -42,8 +42,8 @@ class AIOSMemoryManager(MemoryManager):
     def __init__(
         self,
         backend: MemoryBackend,
-        embedding_provider: EmbeddingProvider | None = None,
-        config: dict[str, Any] | None = None
+        embedding_provider: Optional[EmbeddingProvider] = None,
+        config: Optional[Dict[str, Any]] = None
     ):
         """Initialize the memory manager."""
         super().__init__(backend, embedding_provider)
@@ -145,10 +145,10 @@ class AIOSMemoryManager(MemoryManager):
 
     async def retrieve(
         self,
-        query: str | MemoryQuery,
+        query: Union[str, MemoryQuery],
         agent_id: str,
         limit: int = 10
-    ) -> list[MemorySearchResult]:
+    ) -> List[MemorySearchResult]:
         """Retrieve memories matching the query."""
         # Convert string query to MemoryQuery
         if isinstance(query, str):
@@ -209,7 +209,7 @@ class AIOSMemoryManager(MemoryManager):
         self,
         conversation_id: str,
         agent_id: str
-    ) -> ConversationContext | None:
+    ) -> Optional[ConversationContext]:
         """Get conversation context for managing chat history."""
         return await self.context_manager.get_context(agent_id, conversation_id)
 
@@ -279,7 +279,7 @@ class AIOSMemoryManager(MemoryManager):
         agent_id: str,
         limit: int = 10,
         **filters
-    ) -> list[MemorySearchResult]:
+    ) -> List[MemorySearchResult]:
         """Search memories by type with additional filters."""
         query = MemoryQuery(
             memory_types=[memory_type],
@@ -295,7 +295,7 @@ class AIOSMemoryManager(MemoryManager):
         agent_id: str,
         hours: int = 24,
         limit: int = 50
-    ) -> list[MemorySearchResult]:
+    ) -> List[MemorySearchResult]:
         """Get recent memories for an agent."""
         cutoff_time = datetime.utcnow() - timedelta(hours=hours)
 
@@ -313,7 +313,7 @@ class AIOSMemoryManager(MemoryManager):
         task_id: str,
         agent_id: str,
         limit: int = 20
-    ) -> list[MemorySearchResult]:
+    ) -> List[MemorySearchResult]:
         """Get all memories related to a specific task."""
         query = MemoryQuery(
             task_id=task_id,
@@ -329,7 +329,7 @@ class AIOSMemoryManager(MemoryManager):
         content: str,
         agent_id: str,
         category: str,
-        keywords: list[str] | None = None,
+        keywords: Optional[List[str]] = None,
         scope: MemoryScope = MemoryScope.AGENT_TYPE,
         **kwargs
     ) -> str:
@@ -350,7 +350,7 @@ class AIOSMemoryManager(MemoryManager):
         content: str,
         agent_id: str,
         procedure_name: str,
-        keywords: list[str] | None = None,
+        keywords: Optional[List[str]] = None,
         scope: MemoryScope = MemoryScope.AGENT_TYPE,
         **kwargs
     ) -> str:
@@ -392,9 +392,9 @@ class AIOSMemoryManager(MemoryManager):
     async def export_memories(
         self,
         agent_id: str,
-        memory_types: list[MemoryType] | None = None,
+        memory_types: Optional[List[MemoryType]] = None,
         format: str = "json"
-    ) -> dict[str, Any]:
+    ) -> Dict[str, Any]:
         """Export memories for backup or analysis."""
         query = MemoryQuery(
             agent_id=agent_id,
@@ -427,8 +427,8 @@ class AIOSMemoryManager(MemoryManager):
 
     async def import_memories(
         self,
-        import_data: dict[str, Any],
-        agent_id: str | None = None
+        import_data: Dict[str, Any],
+        agent_id: Optional[str] = None
     ) -> int:
         """Import memories from backup data."""
         imported_count = 0

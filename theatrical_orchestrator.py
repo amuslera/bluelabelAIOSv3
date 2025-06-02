@@ -11,7 +11,7 @@ import json
 import logging
 import time
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from agents.base.enhanced_agent import EnhancedBaseAgent, EnhancedTask
 from agents.base.types import AgentType, TaskType

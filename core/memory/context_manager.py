@@ -8,7 +8,7 @@ to maintain relevant history within model context windows.
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import BaseModel
 
@@ -31,7 +31,7 @@ class ContextWindow(BaseModel):
     max_tokens: int = 32768
 
     # Current state
-    messages: list[dict[str, Any]] = []
+    messages: List[Dict[str, Any]] = []
     current_tokens: int = 0
 
     # Configuration
@@ -40,10 +40,10 @@ class ContextWindow(BaseModel):
     min_messages_to_keep: int = 5  # Always keep recent messages
 
     # Tracking
-    last_compression: datetime | None = None
+    last_compression: Optional[datetime] = None
     compression_count: int = 0
 
-    def add_message(self, message: dict[str, Any], token_count: int) -> bool:
+    def add_message(self, message: Dict[str, Any], token_count: int) -> bool:
         """Add a message to the context window."""
         self.messages.append(message)
         self.current_tokens += token_count
@@ -130,9 +130,9 @@ class ContextManager:
         self,
         agent_id: str,
         conversation_id: str,
-        message: dict[str, Any],
+        message: Dict[str, Any],
         auto_compress: bool = True
-    ) -> tuple[bool, str | None]:
+    ) -> Tuple[bool, Optional[str]]:
         """
         Add a message to the context window.
 
@@ -161,7 +161,7 @@ class ContextManager:
         self,
         agent_id: str,
         conversation_id: str,
-        target_ratio: float | None = None
+        target_ratio: Optional[float] = None
     ) -> str:
         """
         Compress context window by summarizing and removing less important messages.
@@ -295,7 +295,7 @@ class ContextManager:
         logger.info(f"Cleaned up {removed_count} inactive context windows")
         return removed_count
 
-    def _estimate_tokens(self, message: dict[str, Any]) -> int:
+    def _estimate_tokens(self, message: Dict[str, Any]) -> int:
         """Estimate token count for a message."""
         content = ""
 
@@ -398,7 +398,7 @@ class ContextManager:
         return kept_messages, compressed_messages
 
     async def _create_compression_summary(
-        self, compressed_messages: list[dict[str, Any]]
+        self, compressed_messages: List[Dict[str, Any]]
     ) -> str:
         """Create a summary of compressed conversation content."""
         if not compressed_messages:
@@ -436,7 +436,7 @@ class ContextManager:
 
         return ". ".join(summary_parts)
 
-    def _extract_message_content(self, message: dict[str, Any]) -> str:
+    def _extract_message_content(self, message: Dict[str, Any]) -> str:
         """Extract text content from a message."""
         content = message.get("content", "")
 
@@ -466,7 +466,7 @@ class ContextManager:
 
         return min(1.0, matches / 5)  # Normalize by expected keyword density
 
-    def _calculate_relevance(self, message: dict[str, Any], query: str) -> float:
+    def _calculate_relevance(self, message: Dict[str, Any], query: str) -> float:
         """Calculate relevance of a message to a query."""
         content = self._extract_message_content(message).lower()
         query_lower = query.lower()
