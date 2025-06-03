@@ -10,17 +10,27 @@ import logging
 import time
 from datetime import datetime
 from typing import Dict, Optional
+import sys
 
-# Suppress console logging when running dashboard
-logging.getLogger().setLevel(logging.ERROR)
-# Specifically suppress noisy loggers
-for logger_name in ['agents.base', 'core.routing', 'httpx']:
+# Set up file logging for debugging - NO CONSOLE OUTPUT
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('theatrical_debug.log', mode='w')
+        # Removed StreamHandler to prevent console bleeding
+    ]
+)
+logger = logging.getLogger('theatrical_dashboard')
+
+# Suppress console logging for other modules 
+for logger_name in ['agents.base', 'core.routing', 'httpx', 'theatrical_orchestrator', 'urllib3', 'httpcore']:
     logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 from textual import on
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical, ScrollableContainer
-from textual.reactive import reactive
+from textual.reactive import reactive, var
 from textual.widgets import (
     Button,
     DataTable,
@@ -227,36 +237,82 @@ class AgentStatusWidget(Static):
         self.task_start_time = None
 
 
-class EventLogWidget(Log):
-    """Enhanced log widget for theatrical events."""
+class EventLogWidget(Static):
+    """Enhanced log widget for full timeline with agent initials and colors."""
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.event_count = 0
+        self.log_container = None
+        self.log_labels = []
+
+    def compose(self) -> ComposeResult:
+        """Create the scrollable log container."""
+        self.log_container = ScrollableContainer(classes="event-log-scroll")
+        yield self.log_container
 
     def log_event(self, event: TheatricalEvent):
-        """Log a theatrical event with formatting."""
+        """Log a theatrical event with agent initials and color coding."""
         self.event_count += 1
 
-        # Color code by event type
-        color_map = {
-            "SYSTEM": "blue",
-            "PHASE": "magenta",
-            "THINKING": "yellow",
-            "TASK": "cyan",
-            "SUCCESS": "green",
-            "ERROR": "red",
-            "DETAILS": "dim",
-            "METRICS": "white",
-            "SUMMARY": "magenta"
+        # Map agent IDs to initials
+        agent_info = {
+            "orchestrator": "SYS",
+            "cto-001": "CTO",
+            "backend-001": "BE",
+            "frontend-001": "FE",
+            "qa-001": "QA",
+            "devops-001": "DO"
         }
 
-        color = color_map.get(event.event_type, "white")
+        # Get agent initial
+        initial = agent_info.get(event.agent_id, "???")
         timestamp = event.timestamp.strftime("%H:%M:%S")
 
-        # Format message with rich markup
-        formatted_message = f"[{color}][{timestamp}] {event.agent_role}: {event.message}[/{color}]"
-        self.write(formatted_message)
+        # Format message
+        formatted_message = f"{timestamp} [{initial}] {event.message}"
+        
+        # Create and mount the label
+        if self.log_container:
+            try:
+                # Determine CSS class based on agent
+                css_class = "event-log-item"
+                if event.agent_id == "orchestrator":
+                    css_class += " event-sys"
+                elif event.agent_id == "cto-001":
+                    css_class += " event-cto"
+                elif event.agent_id == "backend-001":
+                    css_class += " event-backend"
+                elif event.agent_id == "frontend-001":
+                    css_class += " event-frontend"
+                elif event.agent_id == "qa-001":
+                    css_class += " event-qa"
+                elif event.agent_id == "devops-001":
+                    css_class += " event-devops"
+                
+                label = Label(formatted_message, classes=css_class)
+                self.log_labels.append(label)
+                self.log_container.mount(label)
+                
+                # Keep only last 500 events
+                if len(self.log_labels) > 500:
+                    old_label = self.log_labels.pop(0)
+                    old_label.remove()
+                
+                # Auto-scroll to bottom
+                self.log_container.scroll_end()
+            except Exception as e:
+                pass
+    
+    def clear(self):
+        """Clear all log entries."""
+        if self.log_container:
+            try:
+                for label in self.log_labels:
+                    label.remove()
+                self.log_labels = []
+            except:
+                pass
 
 
 class ProjectMetricsWidget(Static):
@@ -303,15 +359,45 @@ class ProjectMetricsWidget(Static):
             phases_label.update(f"📋 Phases: {phases}/5")
 
 
+class ProjectDescriptionWidget(Static):
+    """Custom widget for project description that properly updates."""
+    
+    project_text = reactive("🎯 Project: Real-time Chat Application with WebSocket support, user authentication, and message history")
+    
+    def render(self) -> str:
+        """Render the project text."""
+        return self.project_text
+
+
 class TheatricalMonitoringApp(App):
     """
     Main monitoring application for theatrical agent orchestration.
     """
 
     CSS = """
+    Static#project-info {
+        height: 3;
+        border: solid yellow;
+        text-align: center;
+        color: yellow;
+        content-align: center middle;
+    }
+    
+    DataTable {
+        scrollbar-size: 1 1;
+    }
+    
+    DataTable > .datatable--cursor {
+        display: none;
+    }
+    
+    DataTable:focus .datatable--cursor {
+        display: none;
+    }
+
     .agent-panel {
         width: 100%;
-        height: 20%;
+        height: 18%;
         border: solid $primary;
         margin: 1;
         padding: 1;
@@ -344,8 +430,10 @@ class TheatricalMonitoringApp(App):
         height: 1fr;
         border: solid $surface;
         margin: 0 1;
-        scrollbar-background: $panel;
+        scrollbar-size: 1 1;
+        scrollbar-background: $background;
         scrollbar-color: $primary;
+        scrollbar-corner-color: $background;
     }
     
     .activity-item {
@@ -362,11 +450,6 @@ class TheatricalMonitoringApp(App):
         margin-bottom: 1;
     }
 
-    .control-panel {
-        height: 6;
-        border: solid $accent;
-        margin: 1;
-    }
 
     .metrics-panel {
         width: 25%;
@@ -377,13 +460,42 @@ class TheatricalMonitoringApp(App):
     .log-panel {
         border: solid $warning;
         margin: 1;
+        height: 1fr;
     }
+    
+    .event-log-scroll {
+        height: 1fr;
+        border: solid $surface;
+        margin: 1;
+        scrollbar-size: 1 1;
+        scrollbar-background: $background;
+        scrollbar-color: $primary;
+        scrollbar-corner-color: $background;
+        overflow-y: auto;
+    }
+    
+    .event-log-item {
+        height: auto;
+        width: 100%;
+        padding: 0 1;
+        margin: 0;
+    }
+    
+    .event-sys { color: $primary; }
+    .event-cto { color: $accent; }
+    .event-backend { color: $success; }
+    .event-frontend { color: $secondary; }
+    .event-qa { color: $warning; }
+    .event-devops { color: $error; }
+    .event-default { color: $text; }
     """
 
     BINDINGS = [
         ("q", "quit", "Quit"),
         ("s", "start_demo", "Start Demo"),
         ("r", "reset", "Reset"),
+        ("e", "export_log", "Export Full Log"),
+        ("p", "export_performance", "Export Performance"),
     ]
 
     def __init__(self):
@@ -391,19 +503,31 @@ class TheatricalMonitoringApp(App):
         self.orchestrator: Optional[TheatricalOrchestrator] = None
         self.agent_widgets: Dict[str, AgentStatusWidget] = {}
         self.event_log: Optional[EventLogWidget] = None
-        self.metrics_widget: Optional[ProjectMetricsWidget] = None
+        self.project_widget: Optional[ProjectDescriptionWidget] = None
         self.demo_running = False  # Use a different name to avoid conflict
         self.start_time: Optional[float] = None
+        self.total_elapsed: float = 0.0
+        self.current_project: str = "Unknown Project"
 
+    def on_mount(self) -> None:
+        """Initialize after mounting."""
+        pass
+    
     def compose(self) -> ComposeResult:
         """Create the monitoring dashboard layout."""
+        logger.info("\n=== COMPOSE STARTED ===")
         yield Header(show_clock=True)
 
         with Container():
+            # PROJECT DESCRIPTION - EXACTLY LIKE WORKING VERSION
+            self.project_widget = Static("🎯 Project: INITIAL TEXT", id="project-info")
+            yield self.project_widget
+            
             with TabbedContent():
                 with TabPane("Agent Orchestra", id="agents-tab"):
                     # Changed from Horizontal to Vertical for stacked layout
                     with Vertical():
+                        
                         # Agent status panels - now stacked vertically
                         self.agent_widgets["cto-001"] = AgentStatusWidget(
                             "cto-001", "🏛️ CTO Agent"
@@ -435,39 +559,37 @@ class TheatricalMonitoringApp(App):
                         self.agent_widgets["devops-001"].classes = "agent-panel"
                         yield self.agent_widgets["devops-001"]
 
-                with TabPane("Event Log", id="log-tab"):
-                    with Horizontal():
-                        # Event log
-                        with Vertical(classes="log-panel"):
-                            self.event_log = EventLogWidget()
-                            yield self.event_log
-
-                        # Metrics sidebar
-                        with Vertical(classes="metrics-panel"):
-                            self.metrics_widget = ProjectMetricsWidget()
-                            yield self.metrics_widget
+                with TabPane("Full Log", id="log-tab"):
+                    # Full-width event log
+                    yield Label("📜 Complete Agent Timeline", classes="section-title")
+                    self.event_log = EventLogWidget(classes="log-panel")
+                    yield self.event_log
 
                 with TabPane("Performance", id="performance-tab"):
                     with Vertical():
-                        yield Label("📈 Performance Dashboard", classes="section-title")
-                        # Performance metrics table
-                        table = DataTable()
-                        table.add_columns("Metric", "Value", "Status")
-                        table.add_row("Response Time", "0.0s", "✅")
-                        table.add_row("Success Rate", "100%", "✅")
-                        table.add_row("Cost Efficiency", "$0.00", "✅")
-                        yield table
+                        yield Label("📊 Agent Performance Comparison", classes="section-title")
+                        # Agent performance comparison table (non-selectable)
+                        self.performance_table = DataTable(id="performance-table", cursor_type="none")
+                        self.performance_table.add_columns("Agent", "Tasks", "Time (s)", "Cost ($)", "Tokens", "Avg/Task")
+                        # Initialize with agent rows
+                        agents = [
+                            ("🏛️ CTO", "0", "0.0", "0.0000", "0", "0.0"),
+                            ("⚙️ Backend", "0", "0.0", "0.0000", "0", "0.0"),
+                            ("🎨 Frontend", "0", "0.0", "0.0000", "0", "0.0"),
+                            ("🧪 QA", "0", "0.0", "0.0000", "0", "0.0"),
+                            ("🚀 DevOps", "0", "0.0", "0.0000", "0", "0.0"),
+                            ("🔧 Setup/Other", "0", "0.0", "0.0000", "0", "0.0"),
+                        ]
+                        for agent_data in agents:
+                            self.performance_table.add_row(*agent_data)
+                        # Add totalization row
+                        self.performance_table.add_row("📊 TOTAL", "0", "0.0", "0.0000", "0", "0.0")
+                        yield self.performance_table
 
-            # Control panel
-            with Horizontal(classes="control-panel"):
-                yield Button("🎬 Start Demo", id="start-btn", variant="success")
-                yield Button("⏸️ Pause", id="pause-btn", variant="warning")
-                yield Button("🔄 Reset", id="reset-btn", variant="error")
-                yield Button("💾 Save Log", id="save-btn", variant="primary")
+            # No control panel - using keybindings instead for minimalist approach
 
         yield Footer()
 
-    @on(Button.Pressed, "#start-btn")
     async def start_demo(self):
         """Start the theatrical demo."""
         if self.demo_running:
@@ -476,6 +598,23 @@ class TheatricalMonitoringApp(App):
 
         self.demo_running = True
         self.start_time = time.time()
+
+        # Update project description using the reactive property
+        project = "Real-time Chat Application with WebSocket support, user authentication, and message history"
+        self.current_project = project
+        
+        logger.info("\n=== START_DEMO UPDATE ATTEMPT ===")
+        logger.info(f"Trying to update to: '🎯 Project: {project}'")
+        
+        # COPY EXACT WORKING VERSION APPROACH
+        try:
+            project_static = self.query_one("#project-info", Static)
+            project_static.update(f"🎯 Project: {project}")
+            logger.info("EXACT COPY: Updated project static like working version")
+            self.notify("✅ EXACT COPY UPDATE!", severity="success")
+        except Exception as e:
+            logger.error(f"Failed exact copy update: {e}")
+            self.notify("❌ Exact copy failed!", severity="error")
 
         # Reset displays and start with real activities
         for widget in self.agent_widgets.values():
@@ -491,25 +630,16 @@ class TheatricalMonitoringApp(App):
             theatrical_delay=1.5,  # Faster for dashboard
             show_details=True
         )
-        
-        # Suppress orchestrator's console logging
-        import logging
-        logging.getLogger('theatrical_orchestrator').setLevel(logging.ERROR)
 
         # Start monitoring task
         asyncio.create_task(self._run_orchestration())
 
         self.notify("🎭 Theatrical orchestration started!", severity="success")
 
-    @on(Button.Pressed, "#pause-btn")
-    def pause_demo(self):
-        """Pause the demo."""
-        self.notify("⏸️ Demo paused", severity="information")
-
-    @on(Button.Pressed, "#reset-btn")
     def reset_demo(self):
         """Reset the demo."""
         self.demo_running = False
+        self.total_elapsed = 0.0
 
         for widget in self.agent_widgets.values():
             widget.clear_log()  # Clear the history log
@@ -518,19 +648,105 @@ class TheatricalMonitoringApp(App):
         if self.event_log:
             self.event_log.clear()
 
-        if self.metrics_widget:
-            self.metrics_widget.update_metrics(0.0, 0.0, 0, 0)
+        # Reset performance table including setup row
+        if hasattr(self, 'performance_table'):
+            try:
+                # Reset Setup/Other row
+                self.performance_table.update_cell_at((5, 1), "-")
+                self.performance_table.update_cell_at((5, 2), "0.0")
+                self.performance_table.update_cell_at((5, 3), "0.0000")
+                self.performance_table.update_cell_at((5, 4), "0")
+                self.performance_table.update_cell_at((5, 5), "-")
+                # Reset TOTAL row
+                self.performance_table.update_cell_at((6, 1), "0")
+                self.performance_table.update_cell_at((6, 2), "0.0")
+                self.performance_table.update_cell_at((6, 3), "0.0000")
+                self.performance_table.update_cell_at((6, 4), "0")
+                self.performance_table.update_cell_at((6, 5), "0.0s")
+            except:
+                pass
 
         self.notify("🔄 Demo reset", severity="information")
 
-    @on(Button.Pressed, "#save-btn")
+    def export_conversation(self):
+        """Export the full conversation to JSON."""
+        import json
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"aiosv3_conversation_{timestamp}.json"
+        
+        try:
+            # Collect all conversation data
+            export_data = {
+                "export_metadata": {
+                    "timestamp": datetime.now().isoformat(),
+                    "project": getattr(self, 'current_project', 'Unknown Project'),
+                    "session_duration": time.time() - (self.start_time or time.time()),
+                    "total_agents": len(self.agent_widgets)
+                },
+                "project_description": getattr(self, 'current_project', 'No project description available'),
+                "agent_activities": {},
+                "orchestrator_events": [],
+                "performance_summary": {}
+            }
+            
+            # Export each agent's activity history
+            for agent_id, widget in self.agent_widgets.items():
+                agent_name = widget.agent_name
+                export_data["agent_activities"][agent_id] = {
+                    "name": agent_name,
+                    "activity_history": widget.activity_history,
+                    "performance": {
+                        "tasks_completed": widget.tasks_completed,
+                        "total_time": widget.total_time,
+                        "total_cost": widget.total_cost,
+                        "total_tokens": widget.total_tokens
+                    }
+                }
+            
+            # Export orchestrator events if available
+            if self.orchestrator and hasattr(self.orchestrator, 'events'):
+                export_data["orchestrator_events"] = [
+                    {
+                        "timestamp": event.timestamp.isoformat(),
+                        "event_type": event.event_type,
+                        "agent_id": event.agent_id,
+                        "agent_role": event.agent_role,
+                        "message": event.message,
+                        "details": event.details
+                    }
+                    for event in self.orchestrator.events
+                ]
+            
+            # Save to file
+            with open(filename, 'w', encoding='utf-8') as f:
+                json.dump(export_data, f, indent=2, ensure_ascii=False)
+            
+            self.notify(f"📤 Conversation exported to {filename}", severity="success")
+            
+        except Exception as e:
+            self.notify(f"❌ Export failed: {e}", severity="error")
+
     def save_log(self):
-        """Save the event log."""
+        """Save the event log to text file."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"theatrical_log_{timestamp}.txt"
-
-        # In a real app, would save to file
-        self.notify(f"💾 Log saved as {filename}", severity="success")
+        
+        try:
+            with open(filename, 'w') as f:
+                # Write header
+                f.write(f"AIOSv3 Theatrical Log - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Project: {getattr(self, 'current_project', 'Unknown')}\n")
+                f.write("=" * 80 + "\n\n")
+                
+                # Write all log entries
+                if self.event_log and hasattr(self.event_log, 'log_labels'):
+                    for label in self.event_log.log_labels:
+                        f.write(label.renderable + "\n")
+                
+            self.notify(f"💾 Log saved as {filename}", severity="success")
+            
+        except Exception as e:
+            self.notify(f"❌ Save failed: {e}", severity="error")
 
     async def _run_orchestration(self):
         """Run the orchestration with live monitoring."""
@@ -547,6 +763,15 @@ class TheatricalMonitoringApp(App):
 
             # Start the project
             project = "Real-time Chat Application with WebSocket support, user authentication, and message history"
+            self.current_project = project
+            
+            # Update project description using correct ID
+            try:
+                project_static = self.query_one("#project-info", Static)
+                project_static.update(f"🎯 Project: {project}")
+                logger.info("Updated project STATIC for orchestration using correct ID")
+            except Exception as e:
+                logger.error(f"Failed to update project widget in orchestration: {e}")
 
             # Start monitoring BEFORE orchestration begins
             monitor_task = asyncio.create_task(self._monitor_events())
@@ -599,18 +824,12 @@ class TheatricalMonitoringApp(App):
                         # Update agent status based on event
                         await self._update_agent_from_event(event)
 
-                        # Update metrics
-                        if self.metrics_widget and self.start_time:
-                            elapsed = time.time() - self.start_time
-                            phases = sum(1 for phase in phase_progress.keys()
-                                       if any(e.details.get("phase") == phase for e in self.orchestrator.events))
-
-                            self.metrics_widget.update_metrics(
-                                cost=self.orchestrator.total_cost,
-                                time_elapsed=elapsed,
-                                tokens=self.orchestrator.total_tokens,
-                                phases=phases
-                            )
+                        # Update performance table
+                        self._update_performance_table()
+                        
+                        # Also update total elapsed time if we have start_time
+                        if self.start_time:
+                            self.total_elapsed = time.time() - self.start_time
 
                     last_event_count = current_event_count
 
@@ -669,6 +888,160 @@ class TheatricalMonitoringApp(App):
     def action_reset(self) -> None:
         """Action for reset keybind."""
         self.reset_demo()
+    
+    def action_export_log(self) -> None:
+        """Export full conversation log."""
+        self.export_conversation()
+    
+    def action_export_performance(self) -> None:
+        """Export performance metrics to CSV."""
+        import csv
+        from datetime import datetime
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"aiosv3_performance_{timestamp}.csv"
+        
+        try:
+            with open(filename, 'w', newline='') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['Agent', 'Tasks', 'Time (s)', 'Cost ($)', 'Tokens', 'Avg/Task'])
+                
+                # Write agent data
+                agent_names = {
+                    "cto-001": "CTO",
+                    "backend-001": "Backend",
+                    "frontend-001": "Frontend",
+                    "qa-001": "QA",
+                    "devops-001": "DevOps"
+                }
+                
+                total_tasks = 0
+                total_time = 0.0
+                total_cost = 0.0
+                total_tokens = 0
+                
+                for agent_id, widget in self.agent_widgets.items():
+                    name = agent_names.get(agent_id, agent_id)
+                    avg_time = widget.total_time / widget.tasks_completed if widget.tasks_completed > 0 else 0.0
+                    
+                    writer.writerow([
+                        name,
+                        widget.tasks_completed,
+                        f"{widget.total_time:.1f}",
+                        f"{widget.total_cost:.4f}",
+                        widget.total_tokens,
+                        f"{avg_time:.1f}"
+                    ])
+                    
+                    total_tasks += widget.tasks_completed
+                    total_time += widget.total_time
+                    total_cost += widget.total_cost
+                    total_tokens += widget.total_tokens
+                
+                # Write Setup/Other row
+                display_time = self.total_elapsed if hasattr(self, 'total_elapsed') and self.total_elapsed > 0 else total_time
+                setup_time = max(0, display_time - total_time)
+                
+                writer.writerow([
+                    'Setup/Other',
+                    '-',
+                    f"{setup_time:.1f}",
+                    '0.0000',
+                    '0',
+                    '-'
+                ])
+                
+                # Write totals
+                avg_total = display_time / total_tasks if total_tasks > 0 else 0.0
+                
+                writer.writerow([
+                    'TOTAL',
+                    total_tasks,
+                    f"{display_time:.1f}",
+                    f"{total_cost:.4f}",
+                    total_tokens,
+                    f"{avg_total:.1f}"
+                ])
+                
+            self.notify(f"📤 Performance exported to {filename}", severity="success")
+            
+        except Exception as e:
+            self.notify(f"❌ Export failed: {e}", severity="error")
+    
+    def _update_performance_table(self):
+        """Update the performance table with current agent data."""
+        if not hasattr(self, 'performance_table'):
+            return
+            
+        try:
+            # Agent mapping for table rows
+            agent_row_map = {
+                "cto-001": 0,
+                "backend-001": 1,
+                "frontend-001": 2,
+                "qa-001": 3,
+                "devops-001": 4
+            }
+            
+            # Track totals for summary row
+            total_tasks = 0
+            total_time = 0.0
+            total_cost = 0.0
+            total_tokens = 0
+            
+            for agent_id, widget in self.agent_widgets.items():
+                if agent_id in agent_row_map:
+                    row_index = agent_row_map[agent_id]
+                    
+                    # Calculate average time per task
+                    avg_time = widget.total_time / widget.tasks_completed if widget.tasks_completed > 0 else 0.0
+                    
+                    # Update table row
+                    self.performance_table.update_cell_at(
+                        (row_index, 1), str(widget.tasks_completed)  # Tasks
+                    )
+                    self.performance_table.update_cell_at(
+                        (row_index, 2), f"{widget.total_time:.1f}"  # Time
+                    )
+                    self.performance_table.update_cell_at(
+                        (row_index, 3), f"{widget.total_cost:.4f}"  # Cost
+                    )
+                    self.performance_table.update_cell_at(
+                        (row_index, 4), str(widget.total_tokens)  # Tokens
+                    )
+                    self.performance_table.update_cell_at(
+                        (row_index, 5), f"{avg_time:.1f}s"  # Avg per task
+                    )
+                    
+                    # Add to totals
+                    total_tasks += widget.tasks_completed
+                    total_time += widget.total_time
+                    total_cost += widget.total_cost
+                    total_tokens += widget.total_tokens
+            
+            # Calculate setup/other time (difference between elapsed and agent time)
+            display_time = self.total_elapsed if hasattr(self, 'total_elapsed') and self.total_elapsed > 0 else total_time
+            setup_time = max(0, display_time - total_time)
+            
+            # Update Setup/Other row (row 5)
+            self.performance_table.update_cell_at((5, 1), "-")  # No tasks for setup
+            self.performance_table.update_cell_at((5, 2), f"{setup_time:.1f}")
+            self.performance_table.update_cell_at((5, 3), "0.0000")  # No cost for setup
+            self.performance_table.update_cell_at((5, 4), "0")  # No tokens for setup
+            self.performance_table.update_cell_at((5, 5), "-")  # No avg for setup
+            
+            # Update totalization row (row 6)
+            avg_total_time = display_time / total_tasks if total_tasks > 0 else 0.0
+            
+            self.performance_table.update_cell_at((6, 1), str(total_tasks))
+            self.performance_table.update_cell_at((6, 2), f"{display_time:.1f}")
+            self.performance_table.update_cell_at((6, 3), f"{total_cost:.4f}")
+            self.performance_table.update_cell_at((6, 4), str(total_tokens))
+            self.performance_table.update_cell_at((6, 5), f"{avg_total_time:.1f}s")
+            
+        except Exception as e:
+            # Silently handle any table update errors
+            pass
 
 
 # Standalone dashboard launcher
