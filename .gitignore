@@ -118,10 +118,10 @@ tmp/
 ehthumbs.db
 Thumbs.db
 
-# Development test files
-test_*.py
-chat_with_*.py
-*_test_*.py
+# Development test files (but not in tests/ directory)
+/test_*.py
+/chat_with_*.py
+/*_test_*.py
 
 # Local development
 local/
