@@ -10,6 +10,16 @@ Build a modular, scalable AI agent platform that:
 - Maximizes code and data ownership
 - Enables rapid development of AI-powered workflows
 
+## 📚 Documentation
+
+**New to AIOSv3?** Start with our [Quick Start Guide](docs/QUICK_START_GUIDE.md) for a fast introduction to the project.
+
+For detailed documentation, see the [docs/](docs/) directory which includes:
+- Architecture and design decisions
+- Development standards and conventions
+- Sprint documentation and progress
+- Theatrical monitoring system guides
+
 ## 🚀 Key Features
 
 - **Multi-Agent Orchestration**: Coordinate multiple specialized agents working together
@@ -115,7 +125,7 @@ bluelabel-AIOSv3/
 └── docs/           # Documentation
 ```
 
-See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed structure.
+See [PROJECT_STRUCTURE.md](docs/project/PROJECT_STRUCTURE.md) for detailed structure.
 
 ## 🤖 Available Agents
 
@@ -138,7 +148,7 @@ Edit `config/models.yaml` to add new LLM providers or update existing ones.
 ### Routing Strategy
 Edit `config/routing.yaml` to customize how models are selected for tasks.
 
-See [LLM_ROUTING_CONFIG.md](LLM_ROUTING_CONFIG.md) for detailed configuration options.
+See [LLM_ROUTING_CONFIG.md](docs/development/LLM_ROUTING_CONFIG.md) for detailed configuration options.
 
 ## 📊 Monitoring
 
@@ -210,7 +220,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 
 ## 🗺️ Roadmap
 
-See [PROJECT_PHASES.md](PROJECT_PHASES.md) for detailed roadmap.
+See [PROJECT_PHASES.md](docs/project/PROJECT_PHASES.md) for detailed roadmap.
 
 ### Current Status: Phase 1 - Foundation (85% Complete)
 - [x] Project structure and documentation

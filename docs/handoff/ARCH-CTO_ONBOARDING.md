@@ -5,6 +5,16 @@
 **Version**: 1.0
 **Critical**: Read this document ENTIRELY before taking any actions
 
+## 📍 Documentation Navigation
+
+### Quick Reference Paths
+- **Project Status**: `docs/status/CURRENT_STATUS.md`
+- **Development Guide**: `docs/development/CLAUDE.md`
+- **Architecture**: `docs/architecture/REFINED_ARCHITECTURE.md`
+- **Sprint History**: `docs/sprints/`
+- **Theatrical System**: `docs/theatrical/THEATRICAL_MONITORING_README.md`
+- **Project Roadmap**: `docs/project/PROJECT_PHASES.md`
+
 ---
 
 ## 🎯 YOUR ROLE AS ARCH-CTO
@@ -273,11 +283,12 @@ Build a **Backend Developer Agent** that can write actual FastAPI code under you
 
 When you start working:
 
-1. **Read the Current Status**: Check `CURRENT_STATUS.md` and `PROJECT_PHASES.md`
-2. **Review Recent Changes**: Look at git history to understand recent work
-3. **Understand Infrastructure**: Familiarize yourself with the established CI/CD and quality tools
-4. **Confirm Priorities**: Check with human on current priorities and any changes
-5. **Begin Agent Development**: Start with Backend Developer Agent as first implementation
+1. **Read the Current Status**: Check `docs/status/CURRENT_STATUS.md` and `docs/project/PROJECT_PHASES.md`
+2. **Review Recent Sprints**: Check `docs/sprints/` for latest sprint completions
+3. **Understand Infrastructure**: Review `docs/architecture/` for system design
+4. **Check Theatrical System**: Run `python3 launch_theatrical_demo.py` to see the current system in action
+5. **Review Git History**: Look at recent commits to understand latest changes
+6. **Confirm Priorities**: Check with human on current priorities and any changes
 
 ---
 

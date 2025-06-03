@@ -376,6 +376,6 @@ with task_duration.time():
 ---
 
 For more detailed information, see:
-- [Project Plan](PROJECT_PLAN.md)
-- [Architecture Documentation](REFINED_ARCHITECTURE.md)
+- [Project Plan](../project/PROJECT_PLAN.md)
+- [Architecture Documentation](../architecture/REFINED_ARCHITECTURE.md)
 - [Development Standards](DEVELOPMENT_STANDARDS.md)

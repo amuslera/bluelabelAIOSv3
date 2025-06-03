@@ -4,6 +4,27 @@
 
 As of 2025-06-02, the AIOSv3 project has successfully achieved multiple major milestones: **Working ARCH-CTO Orchestration with Real Code Generation**, **Theatrical Monitoring System**, and **Fully Functional Activity Display Dashboard v1.0.0**. This document provides complete context for continuing development.
 
+## 📁 New Repository Structure
+
+The project has been reorganized for better maintainability:
+
+```
+bluelabel-AIOSv3/
+├── docs/                    # All documentation
+│   ├── architecture/        # System architecture docs
+│   ├── demos/              # Demo setup and guides
+│   ├── development/        # Development standards and conventions
+│   ├── handoff/            # Handoff and onboarding docs
+│   ├── project/            # Project planning and status
+│   ├── sprints/            # Sprint documentation
+│   ├── status/             # Current status and learnings
+│   └── theatrical/         # Theatrical monitoring system docs
+├── agents/                  # Agent implementations
+├── core/                    # Core infrastructure
+├── control_center/          # Control Center UI
+└── [other source files]     # Main application code
+```
+
 ## 📋 Current State Summary
 
 ### ✅ What's Working
@@ -18,13 +39,13 @@ As of 2025-06-02, the AIOSv3 project has successfully achieved multiple major mi
 
 ### 📁 Key Working Files
 ```
-launch_theatrical_demo.py            # ✅ WORKS - Interactive demo launcher
-theatrical_orchestrator.py           # ✅ WORKS - Visual multi-agent orchestration
-theatrical_monitoring_dashboard.py   # ✅ WORKS v1.0.0 - Real-time TUI dashboard with fixed activity display
-agents/specialists/                   # ✅ WORKS - All 5 specialist agents
-core/routing/providers/claude.py     # ✅ WORKS - Real Claude API integration
-core/routing/providers/openai.py     # ✅ WORKS - Real OpenAI API integration
-core/routing/router.py               # ✅ WORKS - Intelligent LLM routing
+launch_theatrical_demo.py                                      # ✅ WORKS - Interactive demo launcher
+theatrical_monitoring/theatrical_orchestrator.py               # ✅ WORKS - Visual multi-agent orchestration
+theatrical_monitoring/theatrical_monitoring_dashboard.py       # ✅ WORKS v1.0.0 - Real-time TUI dashboard with fixed activity display
+agents/specialists/                                            # ✅ WORKS - All 5 specialist agents
+core/routing/providers/claude.py                               # ✅ WORKS - Real Claude API integration
+core/routing/providers/openai.py                               # ✅ WORKS - Real OpenAI API integration
+core/routing/router.py                                         # ✅ WORKS - Intelligent LLM routing
 ```
 
 ## 🔧 Critical Technical Discoveries
@@ -76,8 +97,8 @@ Converted all union type syntax:
 python3 launch_theatrical_demo.py
 
 # Direct access to components
-python3 theatrical_orchestrator.py                # Console mode
-python3 theatrical_monitoring_dashboard.py        # Dashboard mode
+python3 -m theatrical_monitoring.theatrical_orchestrator        # Console mode
+python3 -m theatrical_monitoring.theatrical_monitoring_dashboard # Dashboard mode
 ```
 
 **Expected Output:**

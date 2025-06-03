@@ -150,8 +150,8 @@ kubectl apply -f k8s/
 - **WebSocket Server** for live updates
 
 ### 🎭 READY: Theatrical Monitoring System v1.0.0 (June 2, 2025)
-- **Theatrical Orchestrator** (`theatrical_orchestrator.py`) - Slowed execution with visual delays
-- **Real-time Dashboard** (`theatrical_monitoring_dashboard.py`) - Live TUI with agent panels **✅ FIXED**
+- **Theatrical Orchestrator** (`theatrical_monitoring/theatrical_orchestrator.py`) - Slowed execution with visual delays
+- **Real-time Dashboard** (`theatrical_monitoring/theatrical_monitoring_dashboard.py`) - Live TUI with agent panels **✅ FIXED**
 - **Demo Launcher** (`launch_theatrical_demo.py`) - Interactive demo with multiple modes
 - **Step-by-step visualization** of agent handoffs and collaboration
 - **Color-coded event logging** with timestamps and role indicators
@@ -181,8 +181,8 @@ kubectl apply -f k8s/
 python3 launch_theatrical_demo.py  # Interactive demo launcher
 
 # Individual Components
-python3 theatrical_orchestrator.py                # Console-only mode
-python3 theatrical_monitoring_dashboard.py        # Dashboard-only mode
+python3 -m theatrical_monitoring.theatrical_orchestrator        # Console-only mode
+python3 -m theatrical_monitoring.theatrical_monitoring_dashboard # Dashboard-only mode
 
 # Previous Working Demos
 python3 test_real_llm_providers.py               # Test LLM routing
@@ -223,8 +223,27 @@ kubectl apply -f k8s/
 ./scripts/deploy.sh
 ```
 
-## Important Files
-- `SPRINT_1_7_COMPLETE.md` - Latest sprint summary
-- `enhanced_mock_provider.py` - Multi-agent mock responses
+## Important Files and Documentation
+
+### Core Documentation
+- `docs/development/CLAUDE.md` - This file, project conventions and requirements
+- `docs/handoff/HANDOFF_DOCUMENTATION.md` - Complete project handoff guide
+- `docs/handoff/ARCH-CTO_ONBOARDING.md` - Onboarding for new Claude instances
+- `docs/status/CURRENT_STATUS.md` - Current project status
+- `docs/project/PROJECT_PHASES.md` - Development roadmap and progress
+
+### Sprint Documentation
+- `docs/sprints/SPRINT_1_9_COMPLETE.md` - Latest sprint summary
+- `docs/sprints/` - All sprint documentation
+
+### Architecture & Design
+- `docs/architecture/REFINED_ARCHITECTURE.md` - System architecture
+- `docs/architecture/ARCHITECTURE_DECISIONS.md` - Key architectural choices
+- `docs/theatrical/THEATRICAL_MONITORING_README.md` - Theatrical system guide
+
+### Implementation Files
+- `core/routing/providers/enhanced_mock_provider.py` - Multi-agent mock responses
 - `agents/specialists/` - All specialist agent implementations
 - `control_center/main.py` - Web UI for monitoring
+- `theatrical_monitoring/theatrical_orchestrator.py` - Main orchestration demo
+- `theatrical_monitoring/theatrical_monitoring_dashboard.py` - Real-time monitoring dashboard
