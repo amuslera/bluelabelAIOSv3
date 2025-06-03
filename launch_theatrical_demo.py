@@ -41,7 +41,7 @@ def print_menu():
 
 async def run_console_mode():
     """Run console-only theatrical orchestration."""
-    from theatrical_orchestrator import demo_theatrical_orchestration
+    from theatrical_monitoring.theatrical_orchestrator import demo_theatrical_orchestration
 
     print("🎭 Starting Console Mode...")
     print("   - Colored terminal output")
@@ -54,7 +54,7 @@ async def run_console_mode():
 
 async def run_dashboard_mode():
     """Run dashboard TUI interface."""
-    from theatrical_monitoring_dashboard import TheatricalMonitoringApp
+    from theatrical_monitoring.theatrical_monitoring_dashboard import TheatricalMonitoringApp
 
     print("📊 Starting Dashboard Mode...")
     print("   - Rich TUI interface")
@@ -82,7 +82,7 @@ async def run_side_by_side():
     # Start dashboard in background
     dashboard_process = subprocess.Popen([
         sys.executable,
-        str(project_root / "theatrical_monitoring_dashboard.py")
+        str(project_root / "theatrical_monitoring" / "theatrical_monitoring_dashboard.py")
     ])
 
     # Give dashboard time to start
@@ -90,7 +90,7 @@ async def run_side_by_side():
 
     try:
         # Run console orchestration
-        from theatrical_orchestrator import demo_theatrical_orchestration
+        from theatrical_monitoring.theatrical_orchestrator import demo_theatrical_orchestration
         await demo_theatrical_orchestration()
     finally:
         # Clean up dashboard process
@@ -100,7 +100,7 @@ async def run_side_by_side():
 
 async def run_quick_demo():
     """Run a quick 30-second overview."""
-    from theatrical_orchestrator import TheatricalOrchestrator
+    from theatrical_monitoring.theatrical_orchestrator import TheatricalOrchestrator
 
     print("❓ Starting Quick Demo...")
     print("   - 30-second overview")
@@ -131,7 +131,7 @@ async def run_quick_demo():
 
 async def run_custom_settings():
     """Run with custom timing and verbosity settings."""
-    from theatrical_orchestrator import TheatricalOrchestrator
+    from theatrical_monitoring.theatrical_orchestrator import TheatricalOrchestrator
 
     print("🔧 Custom Settings Mode")
     print()

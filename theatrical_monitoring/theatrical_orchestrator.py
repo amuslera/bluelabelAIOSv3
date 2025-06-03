@@ -58,7 +58,7 @@ class TheatricalOrchestrator:
     for human observation and understanding.
     """
 
-    def __init__(self, theatrical_delay: float = 3.0, show_details: bool = True):
+    def __init__(self, theatrical_delay: float = 1.0, show_details: bool = True):
         """
         Initialize theatrical orchestrator.
 
@@ -501,59 +501,27 @@ class TheatricalOrchestrator:
         self._log_event("SYSTEM", "orchestrator", "🎭 Theatrical Orchestrator shutdown complete")
 
     async def _setup_providers(self) -> None:
-        """Setup LLM providers based on available API keys."""
-        providers_configured = 0
+        """Setup LLM providers - prefer mock for theatrical demo."""
         
-        # Try to setup Claude provider
-        claude_api_key = os.getenv("ANTHROPIC_API_KEY")
-        if claude_api_key:
-            self._log_event("SYSTEM", "orchestrator", "🤖 Configuring Claude provider...")
-            claude_config = ClaudeConfig(
-                provider_name="claude",
-                api_key=claude_api_key,
-                timeout=60.0,
-            )
-            claude_provider = ClaudeProvider(claude_config)
-            await claude_provider.initialize()
-            self.router.register_provider("claude", claude_provider)
-            providers_configured += 1
-            await self._pause(1.0)
+        # For theatrical demo, ALWAYS use mock provider for speed and reliability
+        self._log_event("SYSTEM", "orchestrator", "🎭 Using mock provider for theatrical demo...")
+        mock_config = MockConfig(
+            provider_name="enhanced_mock",
+            models=[
+                {"id": "mock-cto-model", "context_window": 16384},
+                {"id": "mock-backend-model", "context_window": 16384},
+                {"id": "mock-frontend-model", "context_window": 16384},
+                {"id": "mock-qa-model", "context_window": 16384},
+                {"id": "mock-devops-model", "context_window": 16384},
+            ],
+            default_model_id="mock-cto-model",
+        )
+        mock_provider = EnhancedMockProvider(mock_config)
+        await mock_provider.initialize()
+        self.router.register_provider("enhanced_mock", mock_provider)
+        await self._pause(1.0)
         
-        # Try to setup OpenAI provider
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if openai_api_key:
-            self._log_event("SYSTEM", "orchestrator", "🤖 Configuring OpenAI provider...")
-            openai_config = OpenAIConfig(
-                provider_name="openai",
-                api_key=openai_api_key,
-                timeout=60.0,
-            )
-            openai_provider = OpenAIProvider(openai_config)
-            await openai_provider.initialize()
-            self.router.register_provider("openai", openai_provider)
-            providers_configured += 1
-            await self._pause(1.0)
-        
-        # If no real providers available, use enhanced mock provider
-        if providers_configured == 0:
-            self._log_event("SYSTEM", "orchestrator", "🎭 No API keys found, using mock provider...")
-            mock_config = MockConfig(
-                provider_name="enhanced_mock",
-                models=[
-                    {"id": "mock-cto-model", "context_window": 16384},
-                    {"id": "mock-backend-model", "context_window": 16384},
-                    {"id": "mock-frontend-model", "context_window": 16384},
-                    {"id": "mock-qa-model", "context_window": 16384},
-                    {"id": "mock-devops-model", "context_window": 16384},
-                ],
-                default_model_id="mock-cto-model",
-            )
-            mock_provider = EnhancedMockProvider(mock_config)
-            await mock_provider.initialize()
-            self.router.register_provider("enhanced_mock", mock_provider)
-            await self._pause(1.0)
-        else:
-            self._log_event("SYSTEM", "orchestrator", f"✅ Configured {providers_configured} real LLM provider(s)")
+        self._log_event("SYSTEM", "orchestrator", "✅ Mock provider configured for fast theatrical demo")
 
 
 # Demo function
@@ -565,7 +533,7 @@ async def demo_theatrical_orchestration():
     print()
 
     orchestrator = TheatricalOrchestrator(
-        theatrical_delay=2.0,  # 2 second pauses
+        theatrical_delay=0.5,  # Fast 0.5 second pauses
         show_details=True
     )
 

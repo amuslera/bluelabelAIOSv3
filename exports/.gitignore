@@ -1,0 +1,7 @@
+# Ignore all files in exports directory
+*
+
+# But keep the directory structure
+!.gitignore
+!logs/
+!logs/.gitkeep
