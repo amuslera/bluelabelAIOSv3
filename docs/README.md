@@ -50,28 +50,24 @@ Project planning and management documentation.
 
 ### 🏃 `/sprints/`
 Sprint documentation and retrospectives.
-- [SPRINT_1_1_BACKLOG.md](sprints/SPRINT_1_1_BACKLOG.md) - Sprint 1.1 backlog
-- [SPRINT_1_2_BACKLOG.md](sprints/SPRINT_1_2_BACKLOG.md) - Sprint 1.2 backlog
-- [SPRINT_1_2_COMPLETE.md](sprints/SPRINT_1_2_COMPLETE.md) - Sprint 1.2 completion summary
-- [SPRINT_1_2_5_BACKLOG.md](sprints/SPRINT_1_2_5_BACKLOG.md) - Sprint 1.2.5 backlog
-- [SPRINT_1_2_5_COMPLETE.md](sprints/SPRINT_1_2_5_COMPLETE.md) - Sprint 1.2.5 completion summary
-- [SPRINT_1_2_5_POSTMORTEM.md](sprints/SPRINT_1_2_5_POSTMORTEM.md) - Sprint 1.2.5 postmortem
-- [SPRINT_1_3_PLANNING.md](sprints/SPRINT_1_3_PLANNING.md) - Sprint 1.3 planning
-- [SPRINT_1_3_RETROSPECTIVE.md](sprints/SPRINT_1_3_RETROSPECTIVE.md) - Sprint 1.3 retrospective
-- [SPRINT_1_4_PLAN.md](sprints/SPRINT_1_4_PLAN.md) - Sprint 1.4 plan
-- [SPRINT_1_4_FEEDBACK.md](sprints/SPRINT_1_4_FEEDBACK.md) - Sprint 1.4 feedback
-- [SPRINT_1_4_COMPLETE.md](sprints/SPRINT_1_4_COMPLETE.md) - Sprint 1.4 completion summary
-- [SPRINT_1_5_STATUS.md](sprints/SPRINT_1_5_STATUS.md) - Sprint 1.5 status
-- [SPRINT_1_5_THEATRICAL_REALITY.md](sprints/SPRINT_1_5_THEATRICAL_REALITY.md) - Sprint 1.5 theatrical reality demo
-- [SPRINT_1_6_PLAN.md](sprints/SPRINT_1_6_PLAN.md) - Sprint 1.6 plan
-- [SPRINT_1_6_CONTROL_CENTER.md](sprints/SPRINT_1_6_CONTROL_CENTER.md) - Sprint 1.6 control center
-- [SPRINT_1_6_COMPLETE.md](sprints/SPRINT_1_6_COMPLETE.md) - Sprint 1.6 completion summary
+
+#### Current Sprints
 - [SPRINT_1_7_COMPLETE.md](sprints/SPRINT_1_7_COMPLETE.md) - Sprint 1.7 completion summary
 - [SPRINT_1_8_PLAN.md](sprints/SPRINT_1_8_PLAN.md) - Sprint 1.8 plan
 - [SPRINT_1_8_COMPLETE.md](sprints/SPRINT_1_8_COMPLETE.md) - Sprint 1.8 completion summary
 - [SPRINT_1_9_THEATRICAL_MONITORING.md](sprints/SPRINT_1_9_THEATRICAL_MONITORING.md) - Sprint 1.9 theatrical monitoring
 - [SPRINT_1_9_COMPLETE.md](sprints/SPRINT_1_9_COMPLETE.md) - Sprint 1.9 completion summary
 - [SPRINT_CLOSEOUT_CHECKLIST.md](sprints/SPRINT_CLOSEOUT_CHECKLIST.md) - Sprint closeout checklist template
+
+#### Archived Sprints (1.1 - 1.6)
+Historical sprint documentation has been moved to `/archive/sprints/`:
+- Sprint 1.1 - Initial backlog and foundation
+- Sprint 1.2 - Base agent implementation
+- Sprint 1.2.5 - Bug fixes and stabilization
+- Sprint 1.3 - LLM routing architecture
+- Sprint 1.4 - Real LLM integration
+- Sprint 1.5 - Theatrical reality demo
+- Sprint 1.6 - Control center UI
 
 ### 📊 `/status/`
 Current status and progress reports.
